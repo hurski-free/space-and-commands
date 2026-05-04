@@ -1,13 +1,9 @@
-# Space Defend
+# Space&Commands
 
-Co-op arcade game: defend the planet from asteroids.
+Space simulation with typo commands
 
 ## Deploy
 
 | Environment | URL |
 |-------------|-----|
-| **Production** | [https://space-defend.onrender.com/](https://space-defend.onrender.com/) |
-
-## Local development
-
-The client and server live in the `client/` and `server/` directories. See each folder’s `README.md` for details.
+| **Production** | [https://space-and-commands.onrender.com/](https://space-and-commands.onrender.com/) |

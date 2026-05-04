@@ -1,5 +1,8 @@
 <template>
   <div class="app-root">
+    <Main v-if="screen === 'main'" @start="onStart" />
+    <Game v-else-if="sessionGameConfig" :game-config="sessionGameConfig" @back="onBackToMenu" />
+
     <footer class="dev-contact-badge">
       <span class="dev-contact-label">Developer contact</span>
       <a class="dev-contact-mail" href="mailto:hurski.free@gmail.com">hurski.free@gmail.com</a>
@@ -7,10 +10,38 @@
   </div>
 </template>
 
+<script setup lang="ts">
+import { ref } from 'vue'
+import Main from './components/Main.vue'
+import type { MainStartPayload } from './components/Main.vue'
+import Game from './components/Game.vue'
+import { buildGameConfigFromPreset, getLocalePreset } from './game'
+import type { GameConfig } from './game'
+
+type Screen = 'main' | 'game'
+
+const screen = ref<Screen>('main')
+const sessionGameConfig = ref<GameConfig | null>(null)
+
+function onStart(payload: MainStartPayload): void {
+  const preset = getLocalePreset(payload.language)
+  sessionGameConfig.value = buildGameConfigFromPreset(preset, payload.difficulty)
+  screen.value = 'game'
+}
+
+function onBackToMenu(): void {
+  screen.value = 'main'
+  sessionGameConfig.value = null
+}
+</script>
+
 <style scoped>
 /* Lobby / room UI (shared across components) */
 .app-root {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
   padding: 1.5rem;
   box-sizing: border-box;
 }
