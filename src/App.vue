@@ -1,7 +1,7 @@
 <template>
   <div class="app-root">
     <footer class="dev-contact-badge">
-      <span class="dev-contact-label">Developer contact</span>
+      <span class="dev-contact-label">Developer contact1</span>
       <a class="dev-contact-mail" href="mailto:hurski.free@gmail.com">hurski.free@gmail.com</a>
     </footer>
   </div>
