@@ -35,8 +35,8 @@ export function createInitialWorld(): WorldState {
     planets: [{
       color: randomHexColor(),
       id: 'home-planet',
-      hasFuelDeposits: false,
-      hasMetalDeposits: false,
+      hasFuelDeposits: true,
+      hasMetalDeposits: true,
       massKg: MIN_PLANET_MASS,
       positionX: 0,
       positionY: 350,

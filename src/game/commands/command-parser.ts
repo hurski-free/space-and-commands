@@ -112,8 +112,8 @@ export class CommandParser implements ICommandParser {
         return { kind: 'repair_maneuver_fuel_line' }
       case 'repair_maneuver_fuel':
         return { kind: 'repair_maneuver_fuel' }
-      case 'scan_nearest_planet_resources':
-        return { kind: 'scan_nearest_planet_resources' }
+      case 'scan_nearest_planet':
+        return { kind: 'scan_nearest_planet' }
       default:
         return null
     }

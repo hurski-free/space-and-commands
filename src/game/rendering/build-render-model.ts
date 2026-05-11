@@ -22,6 +22,7 @@ export function buildGameRenderModel(
   return {
     ship: world.ship,
     planets: world.planets,
+    resourceScans: world.resourceScans,
     shipMesh,
     hullTexture,
     hullTextureWidthPx,

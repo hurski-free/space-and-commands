@@ -20,7 +20,7 @@ export type ParsedCommand =
   | { readonly kind: 'repair_main_fuel_line' }
   | { readonly kind: 'repair_maneuver_fuel_line' }
   | { readonly kind: 'repair_maneuver_fuel' }
-  | { readonly kind: 'scan_nearest_planet_resources' }
+  | { readonly kind: 'scan_nearest_planet' }
 
 export interface ParseContext {
   readonly language: CommandLanguage

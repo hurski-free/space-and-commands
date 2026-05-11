@@ -63,7 +63,8 @@ export const EN_COMMAND_LEXICON_ENTRIES = [
   { kind: 'repair_maneuver_fuel', id: 'en.rep.rcs.2', phrase: 'repair rcs' },
   { kind: 'repair_maneuver_fuel', id: 'en.rep.rcs.3', phrase: 'repair attitude thrusters' },
 
-  { kind: 'scan_nearest_planet_resources', id: 'en.scan.1', phrase: 'scan nearest planet' },
-  { kind: 'scan_nearest_planet_resources', id: 'en.scan.2', phrase: 'scan planet resources' },
-  { kind: 'scan_nearest_planet_resources', id: 'en.scan.3', phrase: 'resource scan planet' },
+  { kind: 'scan_nearest_planet', id: 'en.scan.1', phrase: 'scan nearest planet' },
+  { kind: 'scan_nearest_planet', id: 'en.scan.2', phrase: 'scan planet' },
+  { kind: 'scan_nearest_planet', id: 'en.scan.3', phrase: 'resource scan' },
+  { kind: 'scan_nearest_planet', id: 'en.scan.4', phrase: 'planet scan' },
 ] as const satisfies readonly LexiconEntry[]

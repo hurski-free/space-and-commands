@@ -1,4 +1,4 @@
-import type { PlanetBody } from '../domain/planet'
+import type { PlanetBody, ResourceScanResult } from '../domain/planet'
 import type { ShipSnapshot } from '../domain/ship'
 import type { ShipMeshTemplate } from '../../ships/ship-mesh-types'
 
@@ -9,6 +9,8 @@ import type { ShipMeshTemplate } from '../../ships/ship-mesh-types'
 export interface GameRenderModel {
   readonly ship: ShipSnapshot
   readonly planets: readonly PlanetBody[]
+  /** Planets the player has successfully scanned (nearest in range); drives HUD icons. */
+  readonly resourceScans: ReadonlyMap<string, ResourceScanResult>
   /** Indexed hull for canvas draw / plume origins. */
   readonly shipMesh: ShipMeshTemplate
   /**

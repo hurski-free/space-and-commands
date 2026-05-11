@@ -1,7 +1,9 @@
 import type { PlanetBody } from '../domain/planet'
 import type { GameRenderModel } from './render-model'
 import { mulberry32 } from '../core/rng'
+import { SCAN_MAX_DISTANCE } from '../game.const'
 import { drawShipMeshTextured, nozzleWorldPositions } from './draw-ship-mesh'
+import { drawPlanetFuelIcon, drawPlanetMetalIcon, drawPlanetScanBadge } from './draw-planet-icons'
 
 /**
  * Canvas drawing: starfield, planets, ship, velocity hint.
@@ -266,12 +268,45 @@ export class CanvasGameRenderer implements IGameRenderer {
       ctx.strokeStyle = 'rgba(94,224,208,0.28)'
       ctx.lineWidth = 1
       ctx.stroke()
+
+      const scan = model.resourceScans.get(planet.id)
+      if (!scan) continue
+
+      const iconD = Math.min(26, Math.max(11, pr * 0.38))
+      const hasFuel = scan.hasFuelDeposits
+      const hasMetal = scan.hasMetalDeposits
+      const pair = hasFuel && hasMetal
+      const pairGap = pair ? iconD * 0.42 : 0
+      if (hasFuel) {
+        drawPlanetFuelIcon(ctx, c.x - (pair ? pairGap : 0), c.y, pair ? iconD * 0.9 : iconD)
+      }
+      if (hasMetal) {
+        drawPlanetMetalIcon(ctx, c.x + (pair ? pairGap : 0), c.y, pair ? iconD * 0.9 : iconD)
+      }
+
+      const gap = Math.max(8, Math.min(16, pr * 0.14))
+      ctx.save()
+      ctx.globalAlpha = 0.5
+      drawPlanetScanBadge(ctx, c.x + pr + gap + iconD * 0.48, c.y, iconD * 1.08)
+      ctx.restore()
     }
 
     const ship = model.ship.body
     const hullMesh = model.shipMesh
     const hRad = ship.headingRad
     const { x: ox, y: oy } = ship.position
+
+    const shipSc = toS(ox, oy)
+    const scanRadiusScr = SCAN_MAX_DISTANCE * cam.scale
+    ctx.save()
+    ctx.strokeStyle = 'rgba(94, 224, 208, 0.12)'
+    ctx.lineWidth = 1.25
+    ctx.setLineDash([12, 5, 2, 5])
+    ctx.beginPath()
+    ctx.arc(shipSc.x, shipSc.y, scanRadiusScr, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.setLineDash([])
+    ctx.restore()
 
     ctx.save()
     const hullTex = model.hullTexture ?? this.hullAtlas
