@@ -4,7 +4,7 @@
     <Game v-else-if="sessionGameConfig" :game-config="sessionGameConfig" @back="onBackToMenu" />
 
     <footer class="dev-contact-badge">
-      <span class="dev-contact-label">Developer contact</span>
+      <span class="dev-contact-label">{{ t('app.devContact') }}</span>
       <a class="dev-contact-mail" href="mailto:hurski.free@gmail.com">hurski.free@gmail.com</a>
     </footer>
   </div>
@@ -12,11 +12,14 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Main from './components/Main.vue'
 import type { MainStartPayload } from './components/Main.vue'
 import Game from './components/Game.vue'
 import { buildGameConfigFromPreset, getLocalePreset } from './game'
 import type { GameConfig } from './game'
+
+const { t } = useI18n()
 
 type Screen = 'main' | 'game'
 

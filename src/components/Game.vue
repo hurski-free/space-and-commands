@@ -2,64 +2,64 @@
   <div ref="shellRef" class="game-shell" tabindex="-1">
     <header class="game-header">
       <p class="game-meta">
-        Language: <strong>{{ languageLabel }}</strong>
+        {{ t('game.metaLanguage') }}: <strong>{{ languageLabel }}</strong>
         ·
-        Difficulty: <strong>{{ difficultyLabel }}</strong>
+        {{ t('game.metaDifficulty') }}: <strong>{{ difficultyLabel }}</strong>
       </p>
       <div class="header-actions">
         <button type="button" class="sheet-btn" @click="lexiconOpen = true">
-          {{ t.commandsBtn }}
+          {{ t('game.commandsBtn') }}
         </button>
-        <button type="button" class="restart-btn" :aria-label="t.restartAria" @click="restartRun">
-          {{ t.restart }}
+        <button type="button" class="restart-btn" :aria-label="t('game.restartAria')" @click="restartRun">
+          {{ t('game.restart') }}
         </button>
-        <button type="button" class="back-btn" @click="emit('back')">Back to menu</button>
+        <button type="button" class="back-btn" @click="emit('back')">{{ t('game.backToMenu') }}</button>
       </div>
     </header>
 
     <div class="game-stage">
       <div ref="canvasWrapRef" class="canvas-wrap" @click="focusShell">
-        <canvas ref="canvasRef" class="game-canvas" aria-label="Space view" />
+        <canvas ref="canvasRef" class="game-canvas" :aria-label="t('game.canvasAria')" />
         <div v-if="gameOver" class="game-over-overlay" role="alert">
-          <p class="game-over-title">{{ t.gameOverTitle }}</p>
-          <p class="game-over-hint">{{ t.gameOverHint }}</p>
+          <p class="game-over-title">{{ t('game.gameOverTitle') }}</p>
+          <p class="game-over-hint">{{ t('game.gameOverHint') }}</p>
         </div>
       </div>
 
       <aside class="command-panel">
         <div class="hud">
           <div class="hud-row">
-            <span class="hud-label">{{ t.hudSpeed }}</span>
+            <span class="hud-label">{{ t('game.hudSpeed') }}</span>
             <span class="hud-val">{{ hud.speed.toFixed(1) }}</span>
           </div>
           <div class="hud-row">
-            <span class="hud-label">{{ t.hudDist }}</span>
+            <span class="hud-label">{{ t('game.hudDist') }}</span>
             <span class="hud-val">{{ Math.round(hud.dist) }}</span>
           </div>
           <div class="hud-row">
-            <span class="hud-label">{{ t.hudMain }}</span>
+            <span class="hud-label">{{ t('game.hudMain') }}</span>
             <span class="hud-val">{{ hud.mainPct }}%</span>
-            <span v-if="hud.mainStop" class="hud-tag">{{ t.hudStop }}</span>
+            <span v-if="hud.mainStop" class="hud-tag">{{ t('game.hudStop') }}</span>
           </div>
           <div class="hud-row">
-            <span class="hud-label">{{ t.hudRot }}</span>
+            <span class="hud-label">{{ t('game.hudRot') }}</span>
             <span class="hud-val">{{ hud.torque > 0 ? '+' : '' }}{{ hud.torque }}</span>
           </div>
           <div class="hud-row hud-row--small">
-            <span v-if="hud.mainFuelBroken" class="fault">{{ t.faultMainLine }}</span>
-            <span v-if="hud.maneuverBroken" class="fault">{{ t.faultManeuver }}</span>
-            <span v-if="hud.mainDamaged" class="fault">{{ t.faultMainEng }}</span>
-            <span v-if="hud.rcsDamaged" class="fault">{{ t.faultRcs }}</span>
-            <span v-if="hud.commsBroken" class="fault">{{ t.faultComms }}</span>
+            <span v-if="hud.mainFuelBroken" class="fault">{{ t('game.faultMainLine') }}</span>
+            <span v-if="hud.maneuverBroken" class="fault">{{ t('game.faultManeuver') }}</span>
+            <span v-if="hud.mainDamaged" class="fault">{{ t('game.faultMainEng') }}</span>
+            <span v-if="hud.rcsDamaged" class="fault">{{ t('game.faultRcs') }}</span>
+            <span v-if="hud.commsBroken" class="fault">{{ t('game.faultComms') }}</span>
           </div>
           <div class="hud-row hud-row--small">
-            <span class="hud-label">{{ t.hudBodies }}</span>
+            <span class="hud-label">{{ t('game.hudBodies') }}</span>
             <span class="hud-val">{{ hud.planetCount }}</span>
           </div>
         </div>
 
         <div class="command-box">
-          <div class="input-mode-row" role="radiogroup" :aria-label="t.inputModeAria">
+          <div class="input-mode-row" role="radiogroup" :aria-label="t('game.inputModeAria')">
             <button
               type="button"
               class="mode-btn"
@@ -68,7 +68,7 @@
               :aria-checked="inputMode === 'manual'"
               @click="inputMode = 'manual'"
             >
-              {{ t.modeManual }}
+              {{ t('game.modeManual') }}
             </button>
             <button
               type="button"
@@ -80,11 +80,11 @@
               :title="voiceModeTitle"
               @click="inputMode = 'voice'"
             >
-              {{ t.modeVoice }}
+              {{ t('game.modeVoice') }}
             </button>
           </div>
           <div class="command-head">
-            <label class="command-label" for="cmd-input">{{ t.commandLabel }}</label>
+            <label class="command-label" for="cmd-input">{{ t('game.commandLabel') }}</label>
           </div>
           <div class="command-line command-line--field" aria-live="polite">
             <span class="prompt" aria-hidden="true">&gt;</span>
@@ -101,58 +101,35 @@
               maxlength="400"
               :disabled="gameOver"
               :readonly="inputMode === 'voice'"
-              :aria-label="t.commandAria"
+              :aria-label="t('game.commandAria')"
               @keydown.enter.prevent="onCommandEnter"
               @keydown.escape.prevent="onCommandEscape"
             />
           </div>
-          <p class="hint">{{ t.hint }}</p>
+          <p class="hint">{{ commandHint }}</p>
           <p v-if="feedback" class="feedback" :class="{ ok: feedbackOk, err: !feedbackOk }">{{ feedback }}</p>
         </div>
       </aside>
     </div>
 
-    <Teleport to="body">
-      <div
-        v-show="lexiconOpen"
-        class="lex-overlay"
-        role="presentation"
-        @click.self="lexiconOpen = false"
-      >
-        <div
-          class="lex-modal"
-          role="dialog"
-          aria-modal="true"
-          :aria-label="t.commandsTitle"
-          @click.stop
-        >
-          <div class="lex-modal-head">
-            <h2 class="lex-title">{{ t.commandsTitle }}</h2>
-            <button type="button" class="lex-close" :aria-label="t.closeAria" @click="lexiconOpen = false">
-              ×
-            </button>
-          </div>
-          <p class="lex-note">{{ t.commandsNote }}</p>
-          <ul class="lex-list">
-            <li v-for="row in lexiconRows" :key="row.id" class="lex-item">
-              <span class="lex-kind">{{ row.kind }}</span>
-              <code class="lex-phrase">{{ row.phrase }}</code>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </Teleport>
+    <LexiconNotesDialog
+      v-model="lexiconOpen"
+      :lexicon-rows="lexiconRows"
+      :title="t('game.commandsTitle')"
+      :note="t('game.commandsNote')"
+      :close-aria="t('game.close')"
+      :search-label="t('game.lexSearchLabel')"
+      :search-placeholder="t('game.lexSearchPlaceholder')"
+      :search-aria-label="t('game.lexSearchAria')"
+      :search-empty="t('game.lexSearchEmpty')"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref, shallowRef, watch } from 'vue'
-import {
-  buildGameRenderModel,
-  CanvasGameRenderer,
-  createGameSession,
-  Difficulty,
-} from '../game'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { buildGameRenderModel, CanvasGameRenderer, createGameSession } from '../game'
 import type { GameConfig, GameSimulator, ParseFailure, ParseResult } from '../game'
 import {
   getSpeechRecognitionConstructor,
@@ -160,12 +137,9 @@ import {
   type SpeechRecognitionEventLike,
   type SpeechRecognitionLike,
 } from '../speech-recognition-support'
-import {
-  DEFAULT_SHIP_MESH,
-  loadHullTexture,
-  SHIP_HULL_TEXTURE_URLS,
-  SHIP_MESH_TEMPLATES,
-} from '../ships'
+import { DEFAULT_SHIP_MESH, SHIP_MESH_TEMPLATES } from '../ships'
+import { useHullTexture } from '../composables/use-hull-texture'
+import LexiconNotesDialog from './LexiconNotesDialog.vue'
 
 const props = defineProps<{
   gameConfig: GameConfig
@@ -175,6 +149,18 @@ const emit = defineEmits<{
   back: []
 }>()
 
+const { t, locale } = useI18n()
+
+// Match game command language to UI locale for HUD/dialog strings.
+watch(
+  () => props.gameConfig.language,
+  (lang) => {
+    locale.value = lang
+  },
+  { immediate: true },
+)
+
+// --- Template refs (focus shell vs command field; canvas sizing via wrap) ---
 const shellRef = ref<HTMLElement | null>(null)
 const canvasWrapRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -193,6 +179,7 @@ let speechRecognition: SpeechRecognitionLike | null = null
 /** When recognition ends after `stop()`, optionally submit the command line (push-to-talk). */
 let speechEndAction: 'none' | 'submit' = 'none'
 
+// Lexicon for in-run sheet: from session config, stable sort for scanning.
 const lexiconRows = computed(() =>
   [...props.gameConfig.lexicon].sort(
     (a, b) => a.kind.localeCompare(b.kind) || a.phrase.localeCompare(b.phrase),
@@ -213,13 +200,16 @@ const hud = reactive({
   planetCount: 0,
 })
 
+// --- Command feedback + game-over (overlay + input disabled) ---
 const feedback = ref('')
 const feedbackOk = ref(true)
 const gameOver = ref(false)
 
+// --- Simulation + render (class instances kept outside Vue reactivity on purpose) ---
 let simulator: GameSimulator | null = null
 const renderer = new CanvasGameRenderer()
 
+// requestAnimationFrame loop: fixed-step accumulator `acc`, wall clock `lastTs` capped on tab return.
 let raf = 0
 let acc = 0
 /** `null` = wait for next frame before integrating (avoids bogus Δt and tab-switch spikes). */
@@ -227,112 +217,33 @@ let lastTs: number | null = null
 let renderCtx: CanvasRenderingContext2D | null = null
 let animLoopActive = false
 
-const isRu = computed(() => props.gameConfig.language === 'ru')
-
 const sessionShipMesh = computed(
   () => SHIP_MESH_TEMPLATES[props.gameConfig.shipMeshId] ?? DEFAULT_SHIP_MESH,
 )
 
-/** Loaded PNG for current hull; null while loading or if no URL for mesh id. */
-const sessionHullTexture = shallowRef<HTMLImageElement | null>(null)
-const sessionHullTextureW = ref(512)
-const sessionHullTextureH = ref(512)
+const {
+  texture: sessionHullTexture,
+  textureW: sessionHullTextureW,
+  textureH: sessionHullTextureH,
+} = useHullTexture(() => props.gameConfig.shipMeshId)
 
-watch(
-  () => sessionShipMesh.value.id,
-  (id, _prev, onCleanup) => {
-    const url = SHIP_HULL_TEXTURE_URLS[id]
-    if (!url) {
-      sessionHullTexture.value = null
-      return
-    }
-    let cancelled = false
-    onCleanup(() => {
-      cancelled = true
-    })
-    void loadHullTexture(url).then(
-      (img) => {
-        if (cancelled) return
-        sessionHullTexture.value = img
-        sessionHullTextureW.value = img.naturalWidth || 512
-        sessionHullTextureH.value = img.naturalHeight || 512
-      },
-      () => {
-        if (cancelled) return
-        sessionHullTexture.value = null
-      },
-    )
-  },
-  { immediate: true },
+const commandHint = computed(() =>
+  inputMode.value === 'voice' ? t('game.hintVoice') : t('game.hintManual'),
 )
 
-const t = computed(() => {
-  const ru = isRu.value
-  const voiceUi = inputMode.value === 'voice'
-  return {
-    hudSpeed: ru ? 'Скорость' : 'Speed',
-    hudDist: ru ? 'Дистанция' : 'Distance',
-    hudMain: ru ? 'Главный' : 'Main',
-    hudStop: ru ? 'СТОП' : 'STOP',
-    hudRot: ru ? 'RCS' : 'RCS',
-    hudBodies: ru ? 'Тел' : 'Bodies',
-    faultMainLine: ru ? 'Магистраль ГД' : 'Main fuel line',
-    faultManeuver: ru ? 'Маневр.' : 'Maneuver line',
-    faultMainEng: ru ? 'ГД повреждён' : 'Main eng dmg',
-    faultRcs: ru ? 'Маневровые повреждены' : 'Maneuver eng dmg',
-    faultComms: ru ? 'Связь' : 'Comms down',
-    commandLabel: ru ? 'Команда' : 'Command',
-    commandAria: ru ? 'Поле ввода команды' : 'Command input',
-    modeManual: ru ? 'Ручной' : 'Manual',
-    modeVoice: ru ? 'Голос' : 'Voice',
-    inputModeAria: ru ? 'Режим ввода команды' : 'Command input mode',
-    voiceUnsupportedHint: ru ? 'Распознавание речи недоступно в этом браузере' : 'Speech recognition is not available in this browser',
-    voiceBlockedCommsHint: ru
-      ? 'Голос недоступен до ремонта связи (команда «ремонт связи»).'
-      : 'Voice unavailable until comms are repaired (e.g. “repair comms”).',
-    hint: voiceUi
-      ? ru
-        ? 'Удерживайте клавишу K (физическая клавиша, любая раскладка). Говорите в микрофон; отпустите K — команда отправится. N — число в фразе.'
-        : 'Hold the K key (physical key, any keyboard layout). Speak into the mic; release K to send. N = number in the phrase.'
-      : ru
-        ? 'Ввод в поле ниже (клавиатура активна при фокусе на игре). Enter — отправить. N — число (% или отсек/модуль).'
-        : 'Type in the field below (keyboard works when the game surface is focused). Enter to send. N = number (percent or compartment/module).',
-    restart: ru ? 'Заново' : 'Restart',
-    restartAria: ru ? 'Начать забег заново' : 'Restart current run',
-    commandsBtn: ru ? 'Команды' : 'Commands',
-    commandsTitle: ru ? 'Список фраз' : 'Command phrases',
-    commandsNote: ru
-      ? 'Те же строки, что в лексиконе. Пробелы и регистр не важны.'
-      : 'Same phrases as the game lexicon. Spaces and letter case are ignored.',
-    closeAria: ru ? 'Закрыть' : 'Close',
-    gameOverTitle: ru ? 'Катастрофа: столкновение с планетой' : 'Hull breach: planetary impact',
-    gameOverHint: ru ? 'Симуляция остановлена. Вернитесь в меню.' : 'Simulation halted. Return to the menu.',
-  }
-})
+const difficultyLabel = computed(() => t(`game.difficultyName.${props.gameConfig.difficulty}`))
 
-const difficultyLabel = computed(() => {
-  switch (props.gameConfig.difficulty) {
-    case Difficulty.Cadet:
-      return 'Cadet'
-    case Difficulty.Officer:
-      return 'Officer'
-    case Difficulty.Captain:
-      return 'Captain'
-    default:
-      return props.gameConfig.difficulty
-  }
-})
-
-const languageLabel = computed(() => (isRu.value ? 'Русский' : 'English'))
+const languageLabel = computed(() => t(`game.langName.${props.gameConfig.language}`))
 
 const voiceModeAllowed = computed(() => speechSupported.value && !hud.commsBroken)
 
 const voiceModeTitle = computed(() => {
-  if (!speechSupported.value) return t.value.voiceUnsupportedHint
-  if (hud.commsBroken) return t.value.voiceBlockedCommsHint
+  if (!speechSupported.value) return t('game.voiceUnsupportedHint')
+  if (hud.commsBroken) return t('game.voiceBlockedCommsHint')
   return undefined
 })
 
+// Click canvas area: focus command input unless game over (then keep focus on shell for a11y).
 function focusShell(): void {
   if (gameOver.value) {
     shellRef.value?.focus()
@@ -357,6 +268,7 @@ function restartRun(): void {
   })
 }
 
+// --- Web Speech: hold KeyK in voice mode (capture phase), release to stop+submit ---
 function stopSpeechRecognition(): void {
   speechEndAction = 'none'
   if (!speechRecognition) return
@@ -405,6 +317,7 @@ watch(
   },
 )
 
+// Wire recognition events: stream transcript into commandLine; map errors to feedback.
 function bindSpeechHandlers(
   rec: SpeechRecognitionLike,
   opts: { readonly baseText: string; readonly continuous: boolean },
@@ -430,11 +343,10 @@ function bindSpeechHandlers(
     if (ev.error === 'aborted' || ev.error === 'no-speech') {
       return
     }
-    const ru = isRu.value
     if (ev.error === 'not-allowed') {
-      feedback.value = ru ? 'Микрофон недоступен (разрешите доступ).' : 'Microphone blocked (allow access).'
+      feedback.value = t('game.speechMicBlocked')
     } else {
-      feedback.value = ru ? 'Ошибка распознавания речи.' : 'Speech recognition error.'
+      feedback.value = t('game.speechError')
     }
     feedbackOk.value = false
   }
@@ -468,8 +380,7 @@ function startHoldVoiceRecognition(): void {
   } catch {
     speechRecognition = null
     speechListening.value = false
-    const ru = isRu.value
-    feedback.value = ru ? 'Не удалось запустить распознавание.' : 'Could not start speech recognition.'
+    feedback.value = t('game.speechStartFailed')
     feedbackOk.value = false
   }
 }
@@ -502,6 +413,7 @@ function onVoiceKeyUpCapture(e: KeyboardEvent): void {
   finishHoldVoiceRecognition()
 }
 
+// --- Command line: Enter submits in manual mode; Escape clears; simulator parses line ---
 function onCommandEnter(): void {
   if (inputMode.value === 'manual') {
     submitCommandLine()
@@ -523,30 +435,31 @@ function onCommandEscape(): void {
   feedback.value = ''
 }
 
+// Map parser outcomes to localized strings (unknown reason falls back to server message).
 function formatFeedback(result: ParseResult): { text: string; ok: boolean } {
-  const ru = isRu.value
   if (result.ok) {
-    return { text: ru ? 'Команда принята.' : 'Command acknowledged.', ok: true }
+    return { text: t('game.feedback.ok'), ok: true }
   }
   const fail = result as ParseFailure
   switch (fail.reason) {
     case 'empty':
-      return { text: ru ? 'Пустая строка.' : 'Empty input.', ok: false }
+      return { text: t('game.feedback.empty'), ok: false }
     case 'unknown':
-      return { text: ru ? 'Неизвестная команда.' : 'Unknown command.', ok: false }
+      return { text: t('game.feedback.unknown'), ok: false }
     case 'ambiguous':
-      return { text: ru ? 'Неоднозначная фраза.' : 'Ambiguous command.', ok: false }
+      return { text: t('game.feedback.ambiguous'), ok: false }
     case 'too_many_typos':
-      return { text: ru ? 'Слишком много опечаток.' : 'Too many typos.', ok: false }
+      return { text: t('game.feedback.tooManyTypos'), ok: false }
     case 'invalid_number':
-      return { text: ru ? 'Нужно число.' : 'Number required.', ok: false }
+      return { text: t('game.feedback.invalidNumber'), ok: false }
     case 'out_of_range':
-      return { text: ru ? 'Вне диапазона.' : 'Out of range.', ok: false }
+      return { text: t('game.feedback.outOfRange'), ok: false }
     default:
-      return { text: fail.message || (ru ? 'Ошибка.' : 'Error.'), ok: false }
+      return { text: fail.message || t('game.feedback.generic'), ok: false }
   }
 }
 
+// Pull scalar HUD fields from world each frame (after ticks); also mirrors gameOver into Vue.
 function syncHud(): void {
   if (!simulator) return
   const ship = simulator.getWorld().ship
@@ -567,6 +480,7 @@ function syncHud(): void {
   gameOver.value = simulator.getWorld().gameOver
 }
 
+// Match canvas bitmap size to container × DPR; refresh renderer internal viewport.
 function applyCanvasSize(): void {
   const canvas = canvasRef.value
   const wrap = canvasWrapRef.value
@@ -588,6 +502,7 @@ function applyCanvasSize(): void {
   renderer.resize(w, h)
 }
 
+// One animation frame: cap elapsed time, run fixed dt steps, sync HUD, render if context ready.
 function frame(ts: number): void {
   if (!animLoopActive) return
 
@@ -642,6 +557,7 @@ function onWindowResize(): void {
   applyCanvasSize()
 }
 
+// When tab becomes visible again: reset clock baseline (pairs with elapsed cap in `frame`).
 function onVisibilityChange(): void {
   if (document.visibilityState === 'visible') {
     lastTs = null
@@ -649,6 +565,7 @@ function onVisibilityChange(): void {
   }
 }
 
+// --- Global key routing: lexicon Escape; manual mode types into commandLine without focusing input ---
 function onGlobalKeyDown(e: KeyboardEvent): void {
   if (e.ctrlKey || e.metaKey || e.altKey) return
 
@@ -705,6 +622,7 @@ function onGlobalKeyDown(e: KeyboardEvent): void {
   }
 }
 
+// Mount: create session, start RAF, listeners (resize, visibility, capture K for voice).
 onMounted(() => {
   speechSupported.value = !!getSpeechRecognitionConstructor()
   simulator = createGameSession(props.gameConfig).simulator
@@ -728,6 +646,7 @@ onMounted(() => {
   raf = requestAnimationFrame(frame)
 })
 
+// Teardown: stop speech, cancel RAF, drop observers and 2D context reference.
 onUnmounted(() => {
   stopSpeechRecognition()
   animLoopActive = false
@@ -1081,111 +1000,5 @@ onUnmounted(() => {
 
 .feedback.err {
   color: #e8a598;
-}
-
-.lex-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  background: rgba(4, 8, 14, 0.72);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  box-sizing: border-box;
-}
-
-.lex-modal {
-  width: min(36rem, 100%);
-  max-height: min(85vh, 640px);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.lex-modal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.lex-title {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--text-h);
-}
-
-.lex-close {
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  font-size: 1.35rem;
-  line-height: 1;
-  color: var(--muted);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.lex-close:hover {
-  color: var(--text-h);
-  border-color: var(--border);
-}
-
-.lex-note {
-  margin: 0;
-  padding: 0.65rem 1rem 0;
-  font-size: 0.8rem;
-  color: var(--muted);
-  line-height: 1.35;
-}
-
-.lex-list {
-  list-style: none;
-  margin: 0;
-  padding: 0.75rem 1rem 1rem;
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
-}
-
-.lex-item {
-  display: grid;
-  grid-template-columns: minmax(7rem, 32%) 1fr;
-  gap: 0.5rem 0.75rem;
-  padding: 0.35rem 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  font-size: 0.8rem;
-  align-items: start;
-}
-
-.lex-item:last-child {
-  border-bottom: none;
-}
-
-.lex-kind {
-  font-family: ui-monospace, monospace;
-  font-size: 0.72rem;
-  color: var(--muted);
-  word-break: break-all;
-}
-
-.lex-phrase {
-  font-family: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
-  font-size: 0.78rem;
-  color: var(--text-h);
-  background: var(--input-bg);
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  word-break: break-word;
 }
 </style>

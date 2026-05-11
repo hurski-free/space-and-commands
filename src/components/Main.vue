@@ -1,14 +1,19 @@
 <template>
   <main class="main-screen">
     <header class="main-header">
-      <h1 class="title">Space &amp; Commands</h1>
-      <p class="subtitle">Choose language, ship, and difficulty, then start the run.</p>
+      <h1 class="title">{{ t('main.title') }}</h1>
+      <p class="subtitle">{{ t('main.subtitle') }}</p>
     </header>
 
     <div class="lobby-settings-row">
       <section class="panel panel-compact" aria-labelledby="language-heading">
-        <h2 id="language-heading" class="panel-title">Language</h2>
-        <ul class="option-list option-list--row" role="radiogroup" aria-label="Command language">
+        <div class="language-panel-head">
+          <h2 id="language-heading" class="panel-title panel-title--tight">{{ t('main.panelLanguage') }}</h2>
+          <button type="button" class="lobby-lex-btn" @click="lexiconOpen = true">
+            {{ t('main.commandsBtn') }}
+          </button>
+        </div>
+        <ul class="option-list option-list--row" role="radiogroup" :aria-label="t('main.ariaCommandLanguage')">
           <li v-for="opt in languageOptions" :key="opt.value" class="option-list-item">
             <label class="difficulty-option">
               <input
@@ -28,8 +33,8 @@
       </section>
 
       <section class="panel panel-compact" aria-labelledby="difficulty-heading">
-        <h2 id="difficulty-heading" class="panel-title">Difficulty</h2>
-        <ul class="option-list option-list--row" role="radiogroup" aria-label="Difficulty">
+        <h2 id="difficulty-heading" class="panel-title">{{ t('main.panelDifficulty') }}</h2>
+        <ul class="option-list option-list--row" role="radiogroup" :aria-label="t('main.ariaDifficulty')">
           <li v-for="opt in options" :key="opt.value" class="option-list-item">
             <label class="difficulty-option">
               <input
@@ -49,8 +54,8 @@
       </section>
 
       <section class="panel panel-compact panel-ship-pick" aria-labelledby="ship-heading">
-        <h2 id="ship-heading" class="panel-title">Ship</h2>
-        <ul class="option-list option-list--row" role="radiogroup" aria-label="Ship hull">
+        <h2 id="ship-heading" class="panel-title">{{ t('main.panelShip') }}</h2>
+        <ul class="option-list option-list--row" role="radiogroup" :aria-label="t('main.ariaShipHull')">
           <li v-for="opt in shipOptions" :key="opt.id" class="option-list-item">
             <label class="difficulty-option">
               <input
@@ -68,35 +73,56 @@
           </li>
           <li class="option-list-item" role="presentation">
             <div class="option-card option-card--todo" aria-hidden="true">
-              <span class="option-label">TODO</span>
-              <span class="option-hint">More hulls</span>
+              <span class="option-label">{{ t('main.shipTodoLabel') }}</span>
+              <span class="option-hint">{{ t('main.shipTodoHint') }}</span>
             </div>
           </li>
         </ul>
       </section>
     </div>
 
-    <div class="ship-preview-wrap" role="region" aria-label="Ship preview">
-      <canvas ref="shipPreviewCanvasRef" class="ship-preview-canvas" aria-label="Selected ship preview" />
+    <ShipPreviewLobby
+      :ship-mesh-id="selectedShipId"
+      :region-aria="t('main.ariaShipPreview')"
+      :canvas-aria="t('main.ariaShipPreviewCanvas')"
+    />
+
+    <div class="lobby-actions">
+      <button type="button" class="info-btn" @click="infoOpen = true">
+        {{ t('main.infoBtn') }}
+      </button>
+      <button type="button" class="start-btn" @click="onStart">{{ t('main.startGame') }}</button>
     </div>
 
-    <button type="button" class="start-btn" @click="onStart">Start game</button>
+    <InfoDialog v-model="infoOpen" :title="t('main.infoTitle')" :close-aria="t('main.close')">
+      <p>{{ t('main.infoLine0') }}</p>
+      <p>{{ t('main.infoLine1') }}</p>
+    </InfoDialog>
+
+    <LexiconNotesDialog
+      v-model="lexiconOpen"
+      :lexicon-rows="lexiconRows"
+      :title="t('main.commandsTitle')"
+      :note="t('main.commandsNote')"
+      :close-aria="t('main.close')"
+      :search-label="t('main.lexSearchLabel')"
+      :search-placeholder="t('main.lexSearchPlaceholder')"
+      :search-aria-label="t('main.lexSearchAria')"
+      :search-empty="t('main.lexSearchEmpty')"
+    />
   </main>
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
-import { Difficulty } from '../game'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { Difficulty, getLocalePreset } from '../game'
 import type { CommandLanguage, GameConfig } from '../game'
-import { drawShipMeshTextured } from '../game/rendering/draw-ship-mesh'
+import InfoDialog from './InfoDialog.vue'
+import LexiconNotesDialog from './LexiconNotesDialog.vue'
+import ShipPreviewLobby from './ShipPreviewLobby.vue'
 import { loadLobbyPreferences, saveLobbyPreferences } from '../preferences-storage'
-import {
-  DEFAULT_SHIP_MESH,
-  loadHullTexture,
-  meshLocalToWorldMeters,
-  SHIP_HULL_TEXTURE_URLS,
-  SHIP_MESH_TEMPLATES,
-} from '../ships'
+import { DEFAULT_SHIP_MESH, SHIP_MESH_TEMPLATES } from '../ships'
 
 type DifficultyLevel = GameConfig['difficulty']
 
@@ -110,157 +136,68 @@ const emit = defineEmits<{
   start: [payload: MainStartPayload]
 }>()
 
-const languageOptions: { value: CommandLanguage; label: string; hint: string }[] = [
-  {
-    value: 'en',
-    label: 'English',
-    hint: 'Commands typed in English.',
-  },
-  {
-    value: 'ru',
-    label: 'Русский',
-    hint: 'Команды на русском языке.',
-  },
-]
+const { t, te, locale } = useI18n()
+
+// --- Lobby: command language (drives i18n locale + lexicon preset) ---
+const languageCodes: CommandLanguage[] = ['en', 'ru']
+const languageOptions = computed(() =>
+  languageCodes.map((value) => ({
+    value,
+    label: t(`main.language.${value}.label`),
+    hint: t(`main.language.${value}.hint`),
+  })),
+)
 
 const selectedLanguage = ref<CommandLanguage>('en')
 
-const shipOptions = Object.values(SHIP_MESH_TEMPLATES).sort((a, b) =>
-  a.displayName.localeCompare(b.displayName),
-)
-
-const shipLabels: Record<string, { en: string; ru: string }> = {
-  'orca-hauler': {
-    en: 'Orca hauler',
-    ru: 'Грузовик «Орка»',
-  },
-}
-
-const shipHints: Record<string, { en: string; ru: string }> = {
-  'orca-hauler': {
-    en: 'Wide cargo spine; heavier, slower feel.',
-    ru: 'Широкий грузовой корпус; ощущение большей массы.',
-  },
-}
-
-function shipLabel(id: string): string {
-  const row = shipLabels[id]
-  if (!row) return SHIP_MESH_TEMPLATES[id]?.displayName ?? id
-  return selectedLanguage.value === 'ru' ? row.ru : row.en
-}
-
-function shipHint(id: string): string {
-  const row = shipHints[id]
-  if (!row) return ''
-  return selectedLanguage.value === 'ru' ? row.ru : row.en
-}
-
-const selectedShipId = ref<string>(DEFAULT_SHIP_MESH.id)
-const shipPreviewCanvasRef = ref<HTMLCanvasElement | null>(null)
-const selectedHullTexture = shallowRef<HTMLImageElement | null>(null)
-const selectedHullTextureW = ref(512)
-const selectedHullTextureH = ref(512)
-
-const options: { value: DifficultyLevel; label: string; hint: string }[] = [
-  {
-    value: Difficulty.Cadet,
-    label: 'Cadet',
-    hint: 'Forgiving typos, no hazards.',
-  },
-  {
-    value: Difficulty.Officer,
-    label: 'Officer',
-    hint: 'Balanced challenge.',
-  },
-  {
-    value: Difficulty.Captain,
-    label: 'Captain',
-    hint: 'Exact commands, sharper pressure.',
-  },
-]
-
-const selected = ref<DifficultyLevel>(Difficulty.Officer)
-
-function drawSelectedShipPreview(): void {
-  const canvas = shipPreviewCanvasRef.value
-  if (!canvas) return
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
-
-  const cssW = canvas.clientWidth || 300
-  const cssH = canvas.clientHeight || 176
-  const dpr = window.devicePixelRatio || 1
-  canvas.width = Math.floor(cssW * dpr)
-  canvas.height = Math.floor(cssH * dpr)
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-  ctx.clearRect(0, 0, cssW, cssH)
-
-  const mesh = SHIP_MESH_TEMPLATES[selectedShipId.value] ?? DEFAULT_SHIP_MESH
-  const verts = mesh.vertices
-  const worldVerts = verts.map((v) => meshLocalToWorldMeters(mesh, v.x, v.y))
-  const xs = worldVerts.map((p) => p.x)
-  const ys = worldVerts.map((p) => p.y)
-  const minX = Math.min(...xs)
-  const maxX = Math.max(...xs)
-  const minY = Math.min(...ys)
-  const maxY = Math.max(...ys)
-  const meshW = Math.max(1, maxX - minX)
-  const meshH = Math.max(1, maxY - minY)
-
-  const pad = 16
-  const scale = Math.min((cssW - pad * 2) / meshW, (cssH - pad * 2) / meshH) * 1.08
-  const centerX = (minX + maxX) * 0.5
-  const centerY = (minY + maxY) * 0.5
-  const screenCenterX = cssW * 0.5
-  const screenCenterY = cssH * 0.5
-
-  drawShipMeshTextured(
-    ctx,
-    mesh,
-    selectedHullTexture.value,
-    selectedHullTextureW.value,
-    selectedHullTextureH.value,
-    0,
-    0,
-    0,
-    (wx, wy) => ({
-      x: screenCenterX + (wx - centerX) * scale,
-      y: screenCenterY + (wy - centerY) * scale,
-    }),
-  )
-}
-
 watch(
-  () => selectedShipId.value,
-  (id, _prev, onCleanup) => {
-    const url = SHIP_HULL_TEXTURE_URLS[id]
-    if (!url) {
-      selectedHullTexture.value = null
-      drawSelectedShipPreview()
-      return
-    }
-    let cancelled = false
-    onCleanup(() => {
-      cancelled = true
-    })
-    void loadHullTexture(url).then(
-      (img) => {
-        if (cancelled) return
-        selectedHullTexture.value = img
-        selectedHullTextureW.value = img.naturalWidth || 512
-        selectedHullTextureH.value = img.naturalHeight || 512
-        drawSelectedShipPreview()
-      },
-      () => {
-        if (cancelled) return
-        selectedHullTexture.value = null
-        drawSelectedShipPreview()
-      },
-    )
+  selectedLanguage,
+  (lang) => {
+    locale.value = lang
   },
   { immediate: true },
 )
 
+const lexiconOpen = ref(false)
+const infoOpen = ref(false)
+
+// Lexicon rows for the modal: sorted copy of preset for the selected UI language.
+const lexiconRows = computed(() =>
+  [...getLocalePreset(selectedLanguage.value).lexicon].sort(
+    (a, b) => a.kind.localeCompare(b.kind) || a.phrase.localeCompare(b.phrase),
+  ),
+)
+
+// --- Ship hull choice (lobby preview lives in ShipPreviewLobby.vue) ---
+const shipOptions = Object.values(SHIP_MESH_TEMPLATES).sort((a, b) =>
+  a.displayName.localeCompare(b.displayName),
+)
+
+function shipLabel(id: string): string {
+  const key = `main.ship.${id}.label`
+  return te(key) ? t(key) : SHIP_MESH_TEMPLATES[id]?.displayName ?? id
+}
+
+function shipHint(id: string): string {
+  const key = `main.ship.${id}.hint`
+  return te(key) ? t(key) : ''
+}
+
+const selectedShipId = ref<string>(DEFAULT_SHIP_MESH.id)
+
+const difficultyOrder = [Difficulty.Cadet, Difficulty.Officer, Difficulty.Captain] as const
+
+const options = computed(() =>
+  difficultyOrder.map((value) => ({
+    value,
+    label: t(`main.difficulty.${value}.label`),
+    hint: t(`main.difficulty.${value}.hint`),
+  })),
+)
+
+const selected = ref<DifficultyLevel>(Difficulty.Officer)
+
+// Restore last lobby choices; invalid ship id is ignored.
 onMounted(() => {
   const saved = loadLobbyPreferences()
   if (saved.language) selectedLanguage.value = saved.language
@@ -270,16 +207,13 @@ onMounted(() => {
   }
 })
 
+// Persist on any change so refresh keeps settings.
 watch([selectedLanguage, selected, selectedShipId], () => {
   saveLobbyPreferences({
     language: selectedLanguage.value,
     difficulty: selected.value,
     shipMeshId: selectedShipId.value,
   })
-})
-
-watch([selectedShipId, selectedHullTexture], () => {
-  drawSelectedShipPreview()
 })
 
 function onStart(): void {
@@ -294,19 +228,6 @@ function onStart(): void {
     shipMeshId: selectedShipId.value,
   })
 }
-
-function onWindowResize(): void {
-  drawSelectedShipPreview()
-}
-
-onMounted(() => {
-  nextTick(() => drawSelectedShipPreview())
-  window.addEventListener('resize', onWindowResize)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', onWindowResize)
-})
 </script>
 
 <style scoped>
@@ -363,6 +284,15 @@ onUnmounted(() => {
   padding: 1rem 0.85rem 1.1rem;
 }
 
+.language-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
 .panel-title {
   margin: 0 0 0.65rem;
   font-size: 0.72rem;
@@ -372,18 +302,28 @@ onUnmounted(() => {
   color: var(--muted);
 }
 
-.ship-preview-wrap {
+.panel-title--tight {
   margin: 0;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: #070b14;
-  overflow: hidden;
 }
 
-.ship-preview-canvas {
-  display: block;
-  width: 100%;
-  height: 12rem;
+.lobby-lex-btn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-h);
+  background: color-mix(in srgb, var(--accent-dim) 22%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent-dim) 40%, var(--border));
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.lobby-lex-btn:hover {
+  border-color: var(--accent-dim);
+  background: color-mix(in srgb, var(--accent-dim) 30%, var(--surface));
 }
 
 .option-list {
@@ -474,8 +414,37 @@ onUnmounted(() => {
   border: 0;
 }
 
-.start-btn {
+.lobby-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
   align-self: center;
+}
+
+.info-btn {
+  min-width: 6.5rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-h);
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.info-btn:hover {
+  border-color: color-mix(in srgb, var(--accent-dim) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent-dim) 12%, var(--input-bg));
+}
+
+.start-btn {
   min-width: 12rem;
   padding: 0.75rem 1.25rem;
   font-size: 0.95rem;
