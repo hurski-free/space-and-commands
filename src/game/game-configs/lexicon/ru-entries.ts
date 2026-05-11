@@ -9,7 +9,7 @@ export const RU_COMMAND_LEXICON_ENTRIES = [
   { kind: 'main_engine_set', id: 'ru.main.set.2', phrase: 'главный двигатель N%' },
   { kind: 'main_engine_set', id: 'ru.main.set.3', phrase: 'тяга главного N' },
   { kind: 'main_engine_set', id: 'ru.main.set.4', phrase: 'тяга главного N%' },
-  { kind: 'main_engine_set', id: 'ru.main.set.5', phrase: 'установить главный двигатель N процентов' },
+  { kind: 'main_engine_set', id: 'ru.main.set.5', phrase: 'установить главный двигатель N%' },
 
   { kind: 'main_engine_stop', id: 'ru.main.stop.1', phrase: 'главный двигатель стоп' },
   { kind: 'main_engine_stop', id: 'ru.main.stop.2', phrase: 'стоп главный двигатель' },
@@ -17,11 +17,11 @@ export const RU_COMMAND_LEXICON_ENTRIES = [
 
   { kind: 'rotate_left_set', id: 'ru.rot.left.1', phrase: 'вращение влево N' },
   { kind: 'rotate_left_set', id: 'ru.rot.left.2', phrase: 'поворот влево N' },
-  { kind: 'rotate_left_set', id: 'ru.rot.left.3', phrase: 'влево N процентов' },
+  { kind: 'rotate_left_set', id: 'ru.rot.left.3', phrase: 'влево N%' },
 
   { kind: 'rotate_right_set', id: 'ru.rot.right.1', phrase: 'вращение вправо N' },
   { kind: 'rotate_right_set', id: 'ru.rot.right.2', phrase: 'поворот вправо N' },
-  { kind: 'rotate_right_set', id: 'ru.rot.right.3', phrase: 'вправо N процентов' },
+  { kind: 'rotate_right_set', id: 'ru.rot.right.3', phrase: 'вправо N%' },
 
   { kind: 'rotation_disable', id: 'ru.rot.dis.1', phrase: 'выключить вращение' },
   { kind: 'rotation_disable', id: 'ru.rot.dis.2', phrase: 'отключить вращение' },

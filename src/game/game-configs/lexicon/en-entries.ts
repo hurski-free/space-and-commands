@@ -9,7 +9,7 @@ export const EN_COMMAND_LEXICON_ENTRIES = [
   { kind: 'main_engine_set', id: 'en.main.set.2', phrase: 'main engine N%' },
   { kind: 'main_engine_set', id: 'en.main.set.3', phrase: 'main thrust N' },
   { kind: 'main_engine_set', id: 'en.main.set.4', phrase: 'main thrust N%' },
-  { kind: 'main_engine_set', id: 'en.main.set.5', phrase: 'set main engine N percent' },
+  { kind: 'main_engine_set', id: 'en.main.set.5', phrase: 'set main engine N%' },
 
   { kind: 'main_engine_stop', id: 'en.main.stop.1', phrase: 'main engine stop' },
   { kind: 'main_engine_stop', id: 'en.main.stop.2', phrase: 'main engine off' },
@@ -19,12 +19,12 @@ export const EN_COMMAND_LEXICON_ENTRIES = [
   { kind: 'rotate_left_set', id: 'en.rot.left.1', phrase: 'rotate left N' },
   { kind: 'rotate_left_set', id: 'en.rot.left.2', phrase: 'rotation left N' },
   { kind: 'rotate_left_set', id: 'en.rot.left.3', phrase: 'yaw left N' },
-  { kind: 'rotate_left_set', id: 'en.rot.left.4', phrase: 'turn left N percent' },
+  { kind: 'rotate_left_set', id: 'en.rot.left.4', phrase: 'turn left N%' },
 
   { kind: 'rotate_right_set', id: 'en.rot.right.1', phrase: 'rotate right N' },
   { kind: 'rotate_right_set', id: 'en.rot.right.2', phrase: 'rotation right N' },
   { kind: 'rotate_right_set', id: 'en.rot.right.3', phrase: 'yaw right N' },
-  { kind: 'rotate_right_set', id: 'en.rot.right.4', phrase: 'turn right N percent' },
+  { kind: 'rotate_right_set', id: 'en.rot.right.4', phrase: 'turn right N%' },
 
   { kind: 'rotation_disable', id: 'en.rot.dis.1', phrase: 'disable rotation' },
   { kind: 'rotation_disable', id: 'en.rot.dis.2', phrase: 'rotation disable' },
