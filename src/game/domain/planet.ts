@@ -1,5 +1,5 @@
 /**
- * Celestial bodies exert gravity; modules interact when nearby.
+ * Celestial bodies exert gravity.
  */
 
 export interface PlanetBody {
@@ -9,6 +9,11 @@ export interface PlanetBody {
   readonly positionY: number
   /** Display radius in world units (not necessarily physical). */
   readonly radius: number
+  readonly hasFuelDeposits: boolean
+  readonly hasMetalDeposits: boolean
+  readonly color: string
+
+  scanned: boolean
 }
 
 export interface ResourceScanResult {

@@ -4,11 +4,6 @@ import type { GameConfig, GameConfigLocalePreset } from '../simulation/game-conf
 import { englishGameConfigPreset } from './en'
 import { russianGameConfigPreset } from './ru'
 
-export { englishGameConfigPreset } from './en'
-export { russianGameConfigPreset } from './ru'
-export { EN_COMMAND_LEXICON_ENTRIES } from './lexicon/en-entries'
-export { RU_COMMAND_LEXICON_ENTRIES } from './lexicon/ru-entries'
-
 /** Resolve the static locale preset used before difficulty is applied. */
 export function getLocalePreset(language: CommandLanguage): GameConfigLocalePreset {
   if (language === 'ru') {

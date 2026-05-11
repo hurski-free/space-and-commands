@@ -13,7 +13,17 @@ import {
   generateBodiesForRing,
   createRingRng,
 } from '../procedural/space-rings'
-import { shipIntersectsAnyPlanet } from '../physics/planet-collision'
+import {
+  findFirstIntersectingPlanet,
+  resolveShipOnPlanetSurface,
+} from '../physics/planet-collision'
+import {
+  computeLandingChanceFactor,
+  isLandingAttitudeWithinTolerance,
+  structuralStrengthForHull,
+} from '../physics/planet-landing'
+import { hashSeed, mulberry32 } from '../core/rng'
+import { DEFAULT_SHIP_MESH, SHIP_MESH_TEMPLATES } from '../../ships'
 
 /**
  * Facade for one game session: wires parser → executor → physics → hazards each tick.
@@ -38,6 +48,7 @@ export class GameSimulator {
   private readonly physics: PhysicsEngine
   private readonly randomEvents: IRandomEventScheduler
   private readonly eventApplier: IOperationalEventApplier
+  private readonly landingRng: () => number
 
   constructor(
     config: GameConfig,
@@ -59,6 +70,7 @@ export class GameSimulator {
     this.physics = physics
     this.randomEvents = randomEvents
     this.eventApplier = eventApplier
+    this.landingRng = mulberry32(hashSeed(`${config.rngSeed ?? ''}:planet-landing`))
 
     this.appendProceduralRing(0)
   }
@@ -73,11 +85,33 @@ export class GameSimulator {
 
     this.elapsedSec += deltaTimeSec
     this.extendProceduralRingsIfNeeded()
-    this.physics.step(this.world.ship, this.world.planets, deltaTimeSec)
+    const hull = SHIP_MESH_TEMPLATES[this.config.shipMeshId] ?? DEFAULT_SHIP_MESH
+    this.physics.step(this.world.ship, this.world.planets, deltaTimeSec, hull)
 
-    if (shipIntersectsAnyPlanet(this.world.ship, this.world.planets)) {
-      this.world.gameOver = true
-      return
+    const contacted = findFirstIntersectingPlanet(this.world.ship, this.world.planets, hull)
+    if (contacted) {
+      if (
+        !isLandingAttitudeWithinTolerance(
+          this.world.ship.body.headingRad,
+          contacted,
+          this.world.ship.body.position,
+          hull,
+        )
+      ) {
+        this.world.gameOver = true
+        return
+      }
+      const strength = structuralStrengthForHull(hull.structuralStrength)
+      const { velocity, massKg } = this.world.ship.body
+      const speed = Math.hypot(velocity.x, velocity.y)
+      const factor = computeLandingChanceFactor(strength, speed, massKg)
+      const survived = factor >= 1 || this.landingRng() < factor
+
+      if (!survived) {
+        this.world.gameOver = true
+        return
+      }
+      resolveShipOnPlanetSurface(this.world.ship, contacted, hull)
     }
 
     const evt = this.randomEvents.maybeNextEvent({

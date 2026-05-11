@@ -1,5 +1,5 @@
 import type { Difficulty } from '../core/difficulty'
-import type { CommandLanguage, CompartmentId, ModuleId } from '../core/ids'
+import type { CommandLanguage, CompartmentId } from '../core/ids'
 
 /**
  * Canonical commands produced by the parser (language-agnostic).
@@ -16,11 +16,10 @@ export type ParsedCommand =
   | { readonly kind: 'repair_compartment_start'; readonly compartmentId: CompartmentId }
   | { readonly kind: 'repair_compartment_cancel'; readonly compartmentId: CompartmentId }
   | { readonly kind: 'repair_main_engine' }
+  | { readonly kind: 'repair_comms' }
+  | { readonly kind: 'repair_main_fuel_line' }
+  | { readonly kind: 'repair_maneuver_fuel_line' }
   | { readonly kind: 'repair_maneuver_fuel' }
-  | { readonly kind: 'module_send_nearest_planet'; readonly moduleId: ModuleId }
-  | { readonly kind: 'module_order_mine_fuel'; readonly moduleId: ModuleId }
-  | { readonly kind: 'module_order_mine_metal'; readonly moduleId: ModuleId }
-  | { readonly kind: 'module_return'; readonly moduleId: ModuleId }
   | { readonly kind: 'scan_nearest_planet_resources' }
 
 export interface ParseContext {
@@ -29,7 +28,7 @@ export interface ParseContext {
   readonly difficulty: Difficulty
 }
 
-export interface ParseSuccess {
+interface ParseSuccess {
   readonly ok: true
   readonly command: ParsedCommand
   /** Optional: which lexicon entry matched (for tutorials / hints). */
@@ -42,7 +41,7 @@ export interface ParseFailure {
   readonly message: string
 }
 
-export type ParseFailureReason =
+type ParseFailureReason =
   | 'empty'
   | 'unknown'
   | 'too_many_typos'

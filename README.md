@@ -1,6 +1,6 @@
 # Space&Commands
 
-Space simulation with typo commands
+MVP: Space simulation with typo&voice commands
 
 ## Deploy
 

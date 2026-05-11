@@ -9,3 +9,4 @@ export type OperationalEvent =
   | { readonly kind: 'compartment_fault'; readonly compartmentId: CompartmentId; readonly faultKind: CompartmentFaultKind }
   | { readonly kind: 'main_engine_fuel_line_break' }
   | { readonly kind: 'maneuver_fuel_line_break' }
+  | { readonly kind: 'comms_breakdown' }

@@ -10,6 +10,9 @@
         <button type="button" class="sheet-btn" @click="lexiconOpen = true">
           {{ t.commandsBtn }}
         </button>
+        <button type="button" class="restart-btn" :aria-label="t.restartAria" @click="restartRun">
+          {{ t.restart }}
+        </button>
         <button type="button" class="back-btn" @click="emit('back')">Back to menu</button>
       </div>
     </header>
@@ -47,6 +50,7 @@
             <span v-if="hud.maneuverBroken" class="fault">{{ t.faultManeuver }}</span>
             <span v-if="hud.mainDamaged" class="fault">{{ t.faultMainEng }}</span>
             <span v-if="hud.rcsDamaged" class="fault">{{ t.faultRcs }}</span>
+            <span v-if="hud.commsBroken" class="fault">{{ t.faultComms }}</span>
           </div>
           <div class="hud-row hud-row--small">
             <span class="hud-label">{{ t.hudBodies }}</span>
@@ -55,11 +59,52 @@
         </div>
 
         <div class="command-box">
-          <label class="command-label" for="cmd-readonly">{{ t.commandLabel }}</label>
-          <div id="cmd-readonly" class="command-line" aria-live="polite" tabindex="0">
-            <span class="prompt">&gt;</span>
-            <span class="command-text">{{ commandLine }}</span>
-            <span class="cursor" :class="{ blink: cursorOn }">▍</span>
+          <div class="input-mode-row" role="radiogroup" :aria-label="t.inputModeAria">
+            <button
+              type="button"
+              class="mode-btn"
+              :class="{ 'mode-btn--active': inputMode === 'manual' }"
+              role="radio"
+              :aria-checked="inputMode === 'manual'"
+              @click="inputMode = 'manual'"
+            >
+              {{ t.modeManual }}
+            </button>
+            <button
+              type="button"
+              class="mode-btn"
+              :class="{ 'mode-btn--active': inputMode === 'voice' }"
+              role="radio"
+              :aria-checked="inputMode === 'voice'"
+              :disabled="!voiceModeAllowed"
+              :title="voiceModeTitle"
+              @click="inputMode = 'voice'"
+            >
+              {{ t.modeVoice }}
+            </button>
+          </div>
+          <div class="command-head">
+            <label class="command-label" for="cmd-input">{{ t.commandLabel }}</label>
+          </div>
+          <div class="command-line command-line--field" aria-live="polite">
+            <span class="prompt" aria-hidden="true">&gt;</span>
+            <input
+              id="cmd-input"
+              ref="commandInputRef"
+              v-model="commandLine"
+              type="text"
+              class="command-input"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+              maxlength="400"
+              :disabled="gameOver"
+              :readonly="inputMode === 'voice'"
+              :aria-label="t.commandAria"
+              @keydown.enter.prevent="onCommandEnter"
+              @keydown.escape.prevent="onCommandEscape"
+            />
           </div>
           <p class="hint">{{ t.hint }}</p>
           <p v-if="feedback" class="feedback" :class="{ ok: feedbackOk, err: !feedbackOk }">{{ feedback }}</p>
@@ -101,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, shallowRef, watch } from 'vue'
 import {
   buildGameRenderModel,
   CanvasGameRenderer,
@@ -109,6 +154,18 @@ import {
   Difficulty,
 } from '../game'
 import type { GameConfig, GameSimulator, ParseFailure, ParseResult } from '../game'
+import {
+  getSpeechRecognitionConstructor,
+  type SpeechRecognitionErrorEventLike,
+  type SpeechRecognitionEventLike,
+  type SpeechRecognitionLike,
+} from '../speech-recognition-support'
+import {
+  DEFAULT_SHIP_MESH,
+  loadHullTexture,
+  SHIP_HULL_TEXTURE_URLS,
+  SHIP_MESH_TEMPLATES,
+} from '../ships'
 
 const props = defineProps<{
   gameConfig: GameConfig
@@ -121,10 +178,20 @@ const emit = defineEmits<{
 const shellRef = ref<HTMLElement | null>(null)
 const canvasWrapRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+const commandInputRef = ref<HTMLInputElement | null>(null)
 
 /** Reactive command buffer (class-based buffer is not tracked by Vue). */
 const commandLine = ref('')
 const lexiconOpen = ref(false)
+const speechSupported = ref(false)
+const speechListening = ref(false)
+
+/** manual: keyboard + optional mic toggle. voice: hold physical Key K, release to send. */
+const inputMode = ref<'manual' | 'voice'>('voice')
+
+let speechRecognition: SpeechRecognitionLike | null = null
+/** When recognition ends after `stop()`, optionally submit the command line (push-to-talk). */
+let speechEndAction: 'none' | 'submit' = 'none'
 
 const lexiconRows = computed(() =>
   [...props.gameConfig.lexicon].sort(
@@ -142,12 +209,12 @@ const hud = reactive({
   maneuverBroken: false,
   mainDamaged: false,
   rcsDamaged: false,
+  commsBroken: false,
   planetCount: 0,
 })
 
 const feedback = ref('')
 const feedbackOk = ref(true)
-const cursorOn = ref(true)
 const gameOver = ref(false)
 
 let simulator: GameSimulator | null = null
@@ -159,12 +226,49 @@ let acc = 0
 let lastTs: number | null = null
 let renderCtx: CanvasRenderingContext2D | null = null
 let animLoopActive = false
-let cursorInterval = 0
 
 const isRu = computed(() => props.gameConfig.language === 'ru')
 
+const sessionShipMesh = computed(
+  () => SHIP_MESH_TEMPLATES[props.gameConfig.shipMeshId] ?? DEFAULT_SHIP_MESH,
+)
+
+/** Loaded PNG for current hull; null while loading or if no URL for mesh id. */
+const sessionHullTexture = shallowRef<HTMLImageElement | null>(null)
+const sessionHullTextureW = ref(512)
+const sessionHullTextureH = ref(512)
+
+watch(
+  () => sessionShipMesh.value.id,
+  (id, _prev, onCleanup) => {
+    const url = SHIP_HULL_TEXTURE_URLS[id]
+    if (!url) {
+      sessionHullTexture.value = null
+      return
+    }
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
+    })
+    void loadHullTexture(url).then(
+      (img) => {
+        if (cancelled) return
+        sessionHullTexture.value = img
+        sessionHullTextureW.value = img.naturalWidth || 512
+        sessionHullTextureH.value = img.naturalHeight || 512
+      },
+      () => {
+        if (cancelled) return
+        sessionHullTexture.value = null
+      },
+    )
+  },
+  { immediate: true },
+)
+
 const t = computed(() => {
   const ru = isRu.value
+  const voiceUi = inputMode.value === 'voice'
   return {
     hudSpeed: ru ? 'Скорость' : 'Speed',
     hudDist: ru ? 'Дистанция' : 'Distance',
@@ -175,11 +279,26 @@ const t = computed(() => {
     faultMainLine: ru ? 'Магистраль ГД' : 'Main fuel line',
     faultManeuver: ru ? 'Маневр.' : 'Maneuver line',
     faultMainEng: ru ? 'ГД повреждён' : 'Main eng dmg',
-    faultRcs: ru ? 'РДМТ' : 'RCS dmg',
+    faultRcs: ru ? 'Маневровые повреждены' : 'Maneuver eng dmg',
+    faultComms: ru ? 'Связь' : 'Comms down',
     commandLabel: ru ? 'Команда' : 'Command',
-    hint: ru
-      ? 'Печатайте ниже (клавиатура всегда активна). Enter — отправить. N — число (% или отсек/модуль).'
-      : 'Keyboard is always active. Enter to send. N = number (percent or compartment/module).',
+    commandAria: ru ? 'Поле ввода команды' : 'Command input',
+    modeManual: ru ? 'Ручной' : 'Manual',
+    modeVoice: ru ? 'Голос' : 'Voice',
+    inputModeAria: ru ? 'Режим ввода команды' : 'Command input mode',
+    voiceUnsupportedHint: ru ? 'Распознавание речи недоступно в этом браузере' : 'Speech recognition is not available in this browser',
+    voiceBlockedCommsHint: ru
+      ? 'Голос недоступен до ремонта связи (команда «ремонт связи»).'
+      : 'Voice unavailable until comms are repaired (e.g. “repair comms”).',
+    hint: voiceUi
+      ? ru
+        ? 'Удерживайте клавишу K (физическая клавиша, любая раскладка). Говорите в микрофон; отпустите K — команда отправится. N — число в фразе.'
+        : 'Hold the K key (physical key, any keyboard layout). Speak into the mic; release K to send. N = number in the phrase.'
+      : ru
+        ? 'Ввод в поле ниже (клавиатура активна при фокусе на игре). Enter — отправить. N — число (% или отсек/модуль).'
+        : 'Type in the field below (keyboard works when the game surface is focused). Enter to send. N = number (percent or compartment/module).',
+    restart: ru ? 'Заново' : 'Restart',
+    restartAria: ru ? 'Начать забег заново' : 'Restart current run',
     commandsBtn: ru ? 'Команды' : 'Commands',
     commandsTitle: ru ? 'Список фраз' : 'Command phrases',
     commandsNote: ru
@@ -206,8 +325,202 @@ const difficultyLabel = computed(() => {
 
 const languageLabel = computed(() => (isRu.value ? 'Русский' : 'English'))
 
+const voiceModeAllowed = computed(() => speechSupported.value && !hud.commsBroken)
+
+const voiceModeTitle = computed(() => {
+  if (!speechSupported.value) return t.value.voiceUnsupportedHint
+  if (hud.commsBroken) return t.value.voiceBlockedCommsHint
+  return undefined
+})
+
 function focusShell(): void {
-  shellRef.value?.focus()
+  if (gameOver.value) {
+    shellRef.value?.focus()
+    return
+  }
+  commandInputRef.value?.focus()
+}
+
+function restartRun(): void {
+  stopSpeechRecognition()
+  lexiconOpen.value = false
+  commandLine.value = ''
+  feedback.value = ''
+  gameOver.value = false
+  acc = 0
+  lastTs = null
+  simulator = createGameSession(props.gameConfig).simulator
+  syncHud()
+  nextTick(() => {
+    applyCanvasSize()
+    commandInputRef.value?.focus()
+  })
+}
+
+function stopSpeechRecognition(): void {
+  speechEndAction = 'none'
+  if (!speechRecognition) return
+  try {
+    speechRecognition.abort()
+  } catch {
+    try {
+      speechRecognition.stop()
+    } catch {
+      /* ignore */
+    }
+  }
+  speechRecognition = null
+  speechListening.value = false
+}
+
+function onRecognitionEnd(): void {
+  speechRecognition = null
+  speechListening.value = false
+  const action = speechEndAction
+  speechEndAction = 'none'
+  if (action === 'submit') {
+    submitCommandLine()
+  }
+}
+
+watch(gameOver, (over) => {
+  if (over) stopSpeechRecognition()
+})
+
+watch(inputMode, () => {
+  stopSpeechRecognition()
+})
+
+watch(speechSupported, (ok) => {
+  if (!ok && inputMode.value === 'voice') inputMode.value = 'manual'
+})
+
+watch(
+  () => hud.commsBroken,
+  (broken) => {
+    if (broken) {
+      inputMode.value = 'manual'
+      stopSpeechRecognition()
+    }
+  },
+)
+
+function bindSpeechHandlers(
+  rec: SpeechRecognitionLike,
+  opts: { readonly baseText: string; readonly continuous: boolean },
+): void {
+  let finals = ''
+  rec.lang = props.gameConfig.language === 'ru' ? 'ru-RU' : 'en-US'
+  rec.interimResults = true
+  rec.continuous = opts.continuous
+
+  rec.onresult = (ev: SpeechRecognitionEventLike) => {
+    let interim = ''
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const r = ev.results[i]
+      const piece = r[0]?.transcript ?? ''
+      if (r.isFinal) finals += piece
+      else interim += piece
+    }
+    commandLine.value = (opts.baseText + finals + interim).slice(0, 400)
+  }
+
+  rec.onerror = (ev: SpeechRecognitionErrorEventLike) => {
+    speechEndAction = 'none'
+    if (ev.error === 'aborted' || ev.error === 'no-speech') {
+      return
+    }
+    const ru = isRu.value
+    if (ev.error === 'not-allowed') {
+      feedback.value = ru ? 'Микрофон недоступен (разрешите доступ).' : 'Microphone blocked (allow access).'
+    } else {
+      feedback.value = ru ? 'Ошибка распознавания речи.' : 'Speech recognition error.'
+    }
+    feedbackOk.value = false
+  }
+
+  rec.onend = () => {
+    if (speechRecognition !== rec) return
+    onRecognitionEnd()
+  }
+}
+
+function startHoldVoiceRecognition(): void {
+  if (!speechSupported.value || gameOver.value || inputMode.value !== 'voice' || hud.commsBroken) return
+  if (speechListening.value) return
+
+  const Ctor = getSpeechRecognitionConstructor()
+  if (!Ctor) return
+
+  stopSpeechRecognition()
+  speechEndAction = 'none'
+  commandLine.value = ''
+  feedback.value = ''
+
+  const rec = new Ctor()
+  bindSpeechHandlers(rec, { baseText: '', continuous: true })
+
+  try {
+    speechRecognition = rec
+    rec.start()
+    speechListening.value = true
+    void commandInputRef.value?.focus()
+  } catch {
+    speechRecognition = null
+    speechListening.value = false
+    const ru = isRu.value
+    feedback.value = ru ? 'Не удалось запустить распознавание.' : 'Could not start speech recognition.'
+    feedbackOk.value = false
+  }
+}
+
+function finishHoldVoiceRecognition(): void {
+  if (inputMode.value !== 'voice' || !speechRecognition) return
+  speechEndAction = 'submit'
+  try {
+    speechRecognition.stop()
+  } catch {
+    speechEndAction = 'none'
+    speechRecognition = null
+    speechListening.value = false
+  }
+}
+
+function onVoiceKeyDownCapture(e: KeyboardEvent): void {
+  if (inputMode.value !== 'voice' || !speechSupported.value || hud.commsBroken) return
+  if (e.ctrlKey || e.metaKey || e.altKey) return
+  if (lexiconOpen.value || gameOver.value || !simulator) return
+  if (e.code !== 'KeyK' || e.repeat) return
+  e.preventDefault()
+  startHoldVoiceRecognition()
+}
+
+function onVoiceKeyUpCapture(e: KeyboardEvent): void {
+  if (inputMode.value !== 'voice') return
+  if (e.code !== 'KeyK') return
+  e.preventDefault()
+  finishHoldVoiceRecognition()
+}
+
+function onCommandEnter(): void {
+  if (inputMode.value === 'manual') {
+    submitCommandLine()
+  }
+}
+
+function submitCommandLine(): void {
+  if (!simulator || gameOver.value) return
+  const line = commandLine.value
+  commandLine.value = ''
+  const result = simulator.submitCommandLine(line)
+  const fb = formatFeedback(result)
+  feedback.value = fb.text
+  feedbackOk.value = fb.ok
+}
+
+function onCommandEscape(): void {
+  commandLine.value = ''
+  feedback.value = ''
 }
 
 function formatFeedback(result: ParseResult): { text: string; ok: boolean } {
@@ -249,6 +562,7 @@ function syncHud(): void {
   hud.maneuverBroken = ship.maneuverFuelLine.broken
   hud.mainDamaged = ship.mainEngine.damaged
   hud.rcsDamaged = ship.rotation.rcsDamaged
+  hud.commsBroken = ship.commsBroken
   hud.planetCount = simulator.getWorld().planets.length
   gameOver.value = simulator.getWorld().gameOver
 }
@@ -305,10 +619,13 @@ function frame(ts: number): void {
 
       const wrap = canvasWrapRef.value
       if (renderCtx && wrap) {
-        const rect = wrap.getBoundingClientRect()
-        const w = Math.max(1, rect.width)
-        const h = Math.max(1, rect.height)
-        const model = buildGameRenderModel(simulator.getWorld(), w, h)
+        const model = buildGameRenderModel(
+          simulator.getWorld(),
+          sessionShipMesh.value,
+          sessionHullTexture.value,
+          sessionHullTextureW.value,
+          sessionHullTextureH.value,
+        )
         renderer.render(renderCtx, model)
       }
     }
@@ -355,14 +672,18 @@ function onGlobalKeyDown(e: KeyboardEvent): void {
   if (!simulator) return
   if (gameOver.value) return
 
+  if (inputMode.value === 'voice') {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      commandLine.value = ''
+      feedback.value = ''
+    }
+    return
+  }
+
   if (e.key === 'Enter') {
     e.preventDefault()
-    const line = commandLine.value
-    commandLine.value = ''
-    const result = simulator.submitCommandLine(line)
-    const fb = formatFeedback(result)
-    feedback.value = fb.text
-    feedbackOk.value = fb.ok
+    submitCommandLine()
     return
   }
   if (e.key === 'Backspace') {
@@ -385,11 +706,14 @@ function onGlobalKeyDown(e: KeyboardEvent): void {
 }
 
 onMounted(() => {
+  speechSupported.value = !!getSpeechRecognitionConstructor()
   simulator = createGameSession(props.gameConfig).simulator
   animLoopActive = true
   lastTs = null
   renderCtx = null
   window.addEventListener('keydown', onGlobalKeyDown)
+  window.addEventListener('keydown', onVoiceKeyDownCapture, true)
+  window.addEventListener('keyup', onVoiceKeyUpCapture, true)
   window.addEventListener('resize', onWindowResize)
   document.addEventListener('visibilitychange', onVisibilityChange)
   nextTick(() => {
@@ -399,24 +723,23 @@ onMounted(() => {
       resizeObserver = new ResizeObserver(() => applyCanvasSize())
       resizeObserver.observe(wrap)
     }
-    shellRef.value?.focus()
+    commandInputRef.value?.focus()
   })
   raf = requestAnimationFrame(frame)
-  cursorInterval = window.setInterval(() => {
-    cursorOn.value = !cursorOn.value
-  }, 530)
 })
 
 onUnmounted(() => {
+  stopSpeechRecognition()
   animLoopActive = false
   cancelAnimationFrame(raf)
   window.removeEventListener('keydown', onGlobalKeyDown)
+  window.removeEventListener('keydown', onVoiceKeyDownCapture, true)
+  window.removeEventListener('keyup', onVoiceKeyUpCapture, true)
   window.removeEventListener('resize', onWindowResize)
   document.removeEventListener('visibilitychange', onVisibilityChange)
   resizeObserver?.disconnect()
   resizeObserver = null
   renderCtx = null
-  window.clearInterval(cursorInterval)
 })
 </script>
 
@@ -486,7 +809,8 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
-.back-btn {
+.back-btn,
+.restart-btn {
   padding: 0.45rem 0.85rem;
   font-size: 0.82rem;
   font-weight: 500;
@@ -500,7 +824,8 @@ onUnmounted(() => {
     color 0.15s ease;
 }
 
-.back-btn:hover {
+.back-btn:hover,
+.restart-btn:hover {
   border-color: color-mix(in srgb, var(--accent-dim) 45%, var(--border));
   color: var(--text-h);
 }
@@ -636,6 +961,54 @@ onUnmounted(() => {
   gap: 0.5rem;
 }
 
+.input-mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.mode-btn {
+  flex: 1;
+  min-width: 5rem;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.mode-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent-dim) 35%, var(--border));
+  color: var(--text-h);
+}
+
+.mode-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.mode-btn--active {
+  color: var(--text-h);
+  border-color: var(--accent-dim);
+  background: color-mix(in srgb, var(--accent-dim) 16%, var(--surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-dim) 35%, transparent);
+}
+
+.command-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .command-label {
   font-size: 0.68rem;
   font-weight: 600;
@@ -656,28 +1029,37 @@ onUnmounted(() => {
   outline: none;
 }
 
-.command-line:focus-visible {
+.command-line--field {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.command-line--field:focus-within {
   border-color: color-mix(in srgb, var(--accent-dim) 55%, var(--border));
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-dim) 35%, transparent);
+}
+
+.command-input {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: var(--text-h);
+  outline: none;
+}
+
+.command-input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .prompt {
   color: var(--accent-dim);
   margin-right: 0.35rem;
-}
-
-.command-text {
-  color: var(--text-h);
-}
-
-.cursor {
-  color: var(--accent);
-  margin-left: 1px;
-  animation: none;
-}
-
-.cursor.blink {
-  opacity: 0.2;
 }
 
 .hint {

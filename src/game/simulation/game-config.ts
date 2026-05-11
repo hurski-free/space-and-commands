@@ -9,6 +9,8 @@ import type { LexiconEntry } from '../commands/lexicon'
 export interface GameConfig {
   readonly language: CommandLanguage
   readonly difficulty: Difficulty
+  /** Hull mesh id from `SHIP_MESH_TEMPLATES` (canvas). */
+  readonly shipMeshId: string
   /** Fixed timestep for deterministic simulation (optional variable step). */
   readonly fixedDeltaTimeSec: number
   readonly rngSeed: string | null

@@ -53,7 +53,3 @@ export function levenshtein(a: string, b: string): number {
   }
   return row[n]
 }
-
-export function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}

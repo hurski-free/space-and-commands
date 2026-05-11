@@ -28,7 +28,8 @@ export const RU_COMMAND_LEXICON_ENTRIES = [
 
   { kind: 'rotation_stop', id: 'ru.rot.stop.1', phrase: 'остановить вращение' },
   { kind: 'rotation_stop', id: 'ru.rot.stop.2', phrase: 'стоп вращение' },
-  { kind: 'rotation_stop', id: 'ru.rot.stop.3', phrase: 'затормозить вращение' },
+  { kind: 'rotation_stop', id: 'ru.rot.stop.3', phrase: 'вращение стоп' },
+  { kind: 'rotation_stop', id: 'ru.rot.stop.4', phrase: 'затормозить вращение' },
 
   { kind: 'repair_compartment_start', id: 'ru.rep.comp.start.1', phrase: 'ремонт отсека N' },
   { kind: 'repair_compartment_start', id: 'ru.rep.comp.start.2', phrase: 'начать ремонт отсека N' },
@@ -41,25 +42,23 @@ export const RU_COMMAND_LEXICON_ENTRIES = [
   { kind: 'repair_main_engine', id: 'ru.rep.main.1', phrase: 'ремонт главного двигателя' },
   { kind: 'repair_main_engine', id: 'ru.rep.main.2', phrase: 'починить главный двигатель' },
 
+  { kind: 'repair_comms', id: 'ru.rep.comms.1', phrase: 'ремонт связи' },
+  { kind: 'repair_comms', id: 'ru.rep.comms.2', phrase: 'починить связь' },
+  { kind: 'repair_comms', id: 'ru.rep.comms.3', phrase: 'восстановить канал связи' },
+  { kind: 'repair_comms', id: 'ru.rep.comms.4', phrase: 'восстановить радиолинк' },
+
+  { kind: 'repair_main_fuel_line', id: 'ru.rep.mainfuel.1', phrase: 'ремонт магистрали главного двигателя' },
+  { kind: 'repair_main_fuel_line', id: 'ru.rep.mainfuel.2', phrase: 'починить магистраль главного двигателя' },
+  { kind: 'repair_main_fuel_line', id: 'ru.rep.mainfuel.3', phrase: 'ремонт топливной магистрали главного' },
+  { kind: 'repair_main_fuel_line', id: 'ru.rep.mainfuel.4', phrase: 'восстановить линию топлива главного' },
+
+  { kind: 'repair_maneuver_fuel_line', id: 'ru.rep.manfuel.1', phrase: 'ремонт маневровой магистрали' },
+  { kind: 'repair_maneuver_fuel_line', id: 'ru.rep.manfuel.2', phrase: 'починить маневровую магистраль' },
+  { kind: 'repair_maneuver_fuel_line', id: 'ru.rep.manfuel.3', phrase: 'ремонт линии маневрового топлива' },
+
   { kind: 'repair_maneuver_fuel', id: 'ru.rep.rcs.1', phrase: 'ремонт маневровых двигателей' },
   { kind: 'repair_maneuver_fuel', id: 'ru.rep.rcs.2', phrase: 'ремонт маневровых' },
   { kind: 'repair_maneuver_fuel', id: 'ru.rep.rcs.3', phrase: 'починить маневровые двигатели' },
-
-  { kind: 'module_send_nearest_planet', id: 'ru.mod.planet.1', phrase: 'отправить модуль N на ближайшую планету' },
-  { kind: 'module_send_nearest_planet', id: 'ru.mod.planet.2', phrase: 'модуль N к ближайшей планете' },
-  { kind: 'module_send_nearest_planet', id: 'ru.mod.planet.3', phrase: 'модуль N на ближайшую планету' },
-
-  { kind: 'module_order_mine_fuel', id: 'ru.mod.fuel.1', phrase: 'приказ добыть топливо для модуля N' },
-  { kind: 'module_order_mine_fuel', id: 'ru.mod.fuel.2', phrase: 'модуль N добыть топливо' },
-  { kind: 'module_order_mine_fuel', id: 'ru.mod.fuel.3', phrase: 'добыча топлива модуль N' },
-
-  { kind: 'module_order_mine_metal', id: 'ru.mod.metal.1', phrase: 'приказ добывать металл для модуля N' },
-  { kind: 'module_order_mine_metal', id: 'ru.mod.metal.2', phrase: 'модуль N добывать металл' },
-  { kind: 'module_order_mine_metal', id: 'ru.mod.metal.3', phrase: 'добыча металла модуль N' },
-
-  { kind: 'module_return', id: 'ru.mod.ret.1', phrase: 'вернуть модуль N' },
-  { kind: 'module_return', id: 'ru.mod.ret.2', phrase: 'отозвать модуль N' },
-  { kind: 'module_return', id: 'ru.mod.ret.3', phrase: 'возврат модуля N' },
 
   { kind: 'scan_nearest_planet_resources', id: 'ru.scan.1', phrase: 'сканировать планету на наличие ресурсов' },
   { kind: 'scan_nearest_planet_resources', id: 'ru.scan.2', phrase: 'сканировать планету на ресурсы' },

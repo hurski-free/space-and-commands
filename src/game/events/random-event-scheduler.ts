@@ -59,8 +59,11 @@ export class RandomEventScheduler implements IRandomEventScheduler {
       const faultKind = kinds[Math.floor(this.rng() * kinds.length)]
       return { kind: 'compartment_fault', compartmentId: id, faultKind }
     }
-    if (r < 0.72) {
+    if (r < 0.65) {
       return { kind: 'main_engine_fuel_line_break' }
+    }
+    if (r < 0.78) {
+      return { kind: 'comms_breakdown' }
     }
     return { kind: 'maneuver_fuel_line_break' }
   }

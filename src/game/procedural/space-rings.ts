@@ -1,22 +1,15 @@
 import type { PlanetBody } from '../domain/planet'
 import { hashSeed, mulberry32 } from '../core/rng'
-
-/**
- * Procedural space as concentric rings around the origin (0, 0).
- * Ring index n starts at 0.
- */
-
-/** Ring step (world units); layout scaled 5× from the original 10k base. */
-const RING_STEP = 50_000
-const RING_INNER_PAD = 5_000
+import { random, randomHexColor } from '../math'
+import { MAX_PLANET_MASS, MAX_PLANET_RADIUS, MIN_PLANET_MASS, MIN_PLANET_RADIUS, RING_INNER_PAD, RING_STEP, RING_TRIGGER_GEN_OFFSET } from './procedural.const'
 
 /** Inner bound of ring n: RING_STEP*n + RING_INNER_PAD */
-export function ringInnerRadius(n: number): number {
+function ringInnerRadius(n: number): number {
   return RING_STEP * n + RING_INNER_PAD
 }
 
 /** Outer bound of ring n: RING_STEP*(n + 1) */
-export function ringOuterRadius(n: number): number {
+function ringOuterRadius(n: number): number {
   return RING_STEP * (n + 1)
 }
 
@@ -25,7 +18,7 @@ export function ringOuterRadius(n: number): number {
  * Note: ring `0` is expected to be spawned at session start; this threshold applies from n ≥ 1.
  */
 export function ringGenerationTriggerDistance(n: number): number {
-  return RING_STEP * n + 40_000
+  return RING_STEP * n + RING_TRIGGER_GEN_OFFSET
 }
 
 /** Independent RNG stream per ring for stable replays given session seed. */
@@ -48,14 +41,20 @@ export function generateBodiesForRing(ringIndex: number, rng: () => number): Pla
     const theta = rng() * Math.PI * 2
     const u = rng()
     const r = inner + u * span
-    const massKg = 1_750_000 + rng() * 8_250_000
-    const radius = 260 + rng() * 590
+
+    const massKg = random(MIN_PLANET_MASS, MAX_PLANET_MASS)
+    const radius = random(MIN_PLANET_RADIUS, MAX_PLANET_RADIUS)
+    
     bodies.push({
       id: `ring-${ringIndex}-body-${i}`,
       massKg,
       positionX: Math.cos(theta) * r,
       positionY: Math.sin(theta) * r,
       radius,
+      hasFuelDeposits: random(0, 1) < 0.3,
+      hasMetalDeposits: random(0, 1) < 0.3,
+      color: randomHexColor(),
+      scanned: false,
     })
   }
 

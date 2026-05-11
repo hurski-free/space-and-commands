@@ -1,11 +1,12 @@
 import type { PlanetBody } from '../domain/planet'
 import type { ShipState } from '../domain/ship'
+import type { ShipMeshTemplate } from '../../ships/ship-mesh-types'
 import type { Force2 } from './force'
 import type { IGravityModel } from './gravity'
 import type { ILinearAccelerationModel } from './newton'
 import type { IStateIntegrator } from './integrator'
 import type { MutableVector2 } from '../core/vectors'
-import { MAIN_ENGINE_MAX_THRUST_N, RCS_MAX_ANGULAR_ACCEL } from './constants'
+import { MAIN_ENGINE_MAX_THRUST_N, RCS_MAX_ANGULAR_ACCEL } from './physics.const'
 
 /**
  * Orchestrates force summation and integration each tick.
@@ -27,9 +28,14 @@ export class PhysicsEngine {
   }
 
   /** Advance ship body for one timestep (thrust, gravity, rotation). */
-  step(ship: ShipState, planets: readonly PlanetBody[], deltaTimeSec: number): void {
+  step(
+    ship: ShipState,
+    planets: readonly PlanetBody[],
+    deltaTimeSec: number,
+    mainEngineHull: ShipMeshTemplate,
+  ): void {
     const body = ship.body
-    const thrust = this.sumThrustForces(ship, deltaTimeSec)
+    const thrust = this.sumThrustForces(ship, mainEngineHull, deltaTimeSec)
     const grav = this.deps.gravity.netForceOnShip(body.position, body.massKg, planets)
     const net: Force2 = { fx: thrust.fx + grav.fx, fy: thrust.fy + grav.fy }
     this.deps.linearAcceleration.applySecondLaw(net, body.massKg, this.scratchAccel)
@@ -54,8 +60,15 @@ export class PhysicsEngine {
     )
   }
 
-  /** Thrust along ship forward axis (−X is nose in local frame; we use +cos/sin from heading). */
-  protected sumThrustForces(ship: ShipState, _deltaTimeSec: number): Force2 {
+  /**
+   * Thrust along ship forward (+X local / nose). Split equally across `nozzlePositions.length`
+   * so total magnitude stays `MAIN_ENGINE_MAX_THRUST_N` at full throttle.
+   */
+  protected sumThrustForces(
+    ship: ShipState,
+    hull: ShipMeshTemplate,
+    _deltaTimeSec: number,
+  ): Force2 {
     void _deltaTimeSec
     const me = ship.mainEngine
     const fuelOk = !ship.mainFuelLine.broken && !me.damaged
@@ -63,10 +76,18 @@ export class PhysicsEngine {
     if (fuelOk && !me.commandedStop) {
       throttle = Math.max(0, Math.min(100, me.throttlePercent)) / 100
     }
-    const f = throttle * MAIN_ENGINE_MAX_THRUST_N
+    const n = hull.nozzlePositions.length
+    const nozzleCount = n > 0 ? n : 1
+    const fEach = (throttle * MAIN_ENGINE_MAX_THRUST_N) / nozzleCount
     const h = ship.body.headingRad
-    const fx = Math.cos(h) * f
-    const fy = Math.sin(h) * f
+    const cosH = Math.cos(h)
+    const sinH = Math.sin(h)
+    let fx = 0
+    let fy = 0
+    for (let i = 0; i < nozzleCount; i++) {
+      fx += cosH * fEach
+      fy += sinH * fEach
+    }
     return { fx, fy }
   }
 }

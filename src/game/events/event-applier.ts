@@ -28,6 +28,10 @@ export class OperationalEventApplier implements IOperationalEventApplier {
         ship.maneuverFuelLine.broken = true
         break
       }
+      case 'comms_breakdown': {
+        ship.commsBroken = true
+        break
+      }
     }
   }
 }

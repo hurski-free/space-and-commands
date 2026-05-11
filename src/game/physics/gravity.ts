@@ -1,10 +1,10 @@
 import type { PlanetBody } from '../domain/planet'
 import type { Force2 } from './force'
 import type { Vector2 } from '../core/vectors'
-import { GRAVITY_EPSILON_SQ, GRAVITY_G } from './constants'
+import { GRAVITY_EPSILON_SQ, GRAVITY_G } from './physics.const'
 
 /**
- * Gravitational attraction from planets onto the ship (and optionally modules).
+ * Gravitational attraction from planets onto the ship.
  */
 
 export interface IGravityModel {

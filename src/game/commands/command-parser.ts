@@ -2,7 +2,7 @@ import type { ITypoPolicy, TypoPolicyContext } from './typo-policy'
 import type { ICommandLexicon } from './lexicon'
 import type { LexiconEntry } from './lexicon'
 import type { ParseContext, ParseResult, ParsedCommand } from './command-types'
-import type { CompartmentId, ModuleId } from '../core/ids'
+import type { CompartmentId } from '../core/ids'
 import {
   normalizeCommandInput,
   phraseSkeletonForMatch,
@@ -28,13 +28,6 @@ interface Candidate {
 /** Stable key for tie-breaking and ambiguity (same payload = same command). */
 function parsedCommandKey(cmd: ParsedCommand): string {
   return JSON.stringify(cmd)
-}
-
-function normalizeModuleId(num: number): ModuleId | null {
-  const id = Math.round(num)
-  if (id !== 1 && id !== 2) return null
-  if (Math.abs(id - num) > 1e-6) return null
-  return id as ModuleId
 }
 
 export class CommandParser implements ICommandParser {
@@ -111,6 +104,12 @@ export class CommandParser implements ICommandParser {
         return { kind: 'rotation_stop' }
       case 'repair_main_engine':
         return { kind: 'repair_main_engine' }
+      case 'repair_comms':
+        return { kind: 'repair_comms' }
+      case 'repair_main_fuel_line':
+        return { kind: 'repair_main_fuel_line' }
+      case 'repair_maneuver_fuel_line':
+        return { kind: 'repair_maneuver_fuel_line' }
       case 'repair_maneuver_fuel':
         return { kind: 'repair_maneuver_fuel' }
       case 'scan_nearest_planet_resources':
@@ -142,26 +141,6 @@ export class CommandParser implements ICommandParser {
         return kind === 'repair_compartment_start'
           ? { kind: 'repair_compartment_start', compartmentId }
           : { kind: 'repair_compartment_cancel', compartmentId }
-      }
-      case 'module_send_nearest_planet': {
-        const moduleId = normalizeModuleId(num)
-        if (!moduleId) return null
-        return { kind: 'module_send_nearest_planet', moduleId }
-      }
-      case 'module_order_mine_fuel': {
-        const moduleId = normalizeModuleId(num)
-        if (!moduleId) return null
-        return { kind: 'module_order_mine_fuel', moduleId }
-      }
-      case 'module_order_mine_metal': {
-        const moduleId = normalizeModuleId(num)
-        if (!moduleId) return null
-        return { kind: 'module_order_mine_metal', moduleId }
-      }
-      case 'module_return': {
-        const moduleId = normalizeModuleId(num)
-        if (!moduleId) return null
-        return { kind: 'module_return', moduleId }
       }
       default:
         return null
