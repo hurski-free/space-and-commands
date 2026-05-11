@@ -97,6 +97,7 @@
     <InfoDialog v-model="infoOpen" :title="t('main.infoTitle')" :close-aria="t('main.close')">
       <p>{{ t('main.infoLine0') }}</p>
       <p>{{ t('main.infoLine1') }}</p>
+      <p>{{ t('main.infoLineVoice') }}</p>
     </InfoDialog>
 
     <LexiconNotesDialog

@@ -46,6 +46,8 @@ export default {
       'Space & Commands is a space simulation where you pilot the ship with typed commands (typo-tolerant) and optional voice input.',
     infoLine1:
       'Pick command language, difficulty, and hull, then press Start game. In flight, use the Commands button to browse phrases.',
+    infoLineVoice:
+      'To enter a voice command, hold the K key and speak your command. When you are ready, release the key — it will be submitted automatically.',
   },
   game: {
     metaLanguage: 'Language',
