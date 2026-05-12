@@ -160,8 +160,6 @@ watch(
   { immediate: true },
 )
 
-alert('Game.vue mounted')
-
 // --- Template refs (focus shell vs command field; canvas sizing via wrap) ---
 const shellRef = ref<HTMLElement | null>(null)
 const canvasWrapRef = ref<HTMLElement | null>(null)
