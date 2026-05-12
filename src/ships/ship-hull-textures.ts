@@ -10,7 +10,10 @@ export function loadHullTexture(url: string): Promise<HTMLImageElement> {
     const img = new Image()
     img.decoding = 'async'
     img.onload = () => resolve(img)
-    img.onerror = () => reject(new Error(`Hull texture failed to load: ${url}`))
+    img.onerror = () => {
+      alert(`Hull texture failed to load: ${url}`)
+      reject(new Error(`Hull texture failed to load: ${url}`))
+    }
     img.src = url
   })
 }
