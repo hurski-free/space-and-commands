@@ -13,6 +13,13 @@ export type {
 export { getDifficultyProfile, maxTyposForTokenLength } from './core/difficulty-config'
 
 export type { GameConfig } from './simulation/game-config'
+export type { LevelConfig, LevelPlanetSpawn, LevelTask } from './simulation/level-config'
+export type { LevelProgressView, LevelTaskProgressEntry } from './domain/level-tasks'
+export {
+  DEFAULT_LEVEL_ID,
+  LEVEL_CONFIGS,
+  getLevelConfig,
+} from './levels'
 export {
   getLocalePreset,
   buildGameConfigFromPreset,

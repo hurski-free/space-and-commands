@@ -29,7 +29,7 @@ const sessionGameConfig = ref<GameConfig | null>(null)
 function onStart(payload: MainStartPayload): void {
   const preset = getLocalePreset(payload.language)
   sessionGameConfig.value = {
-    ...buildGameConfigFromPreset(preset, payload.difficulty),
+    ...buildGameConfigFromPreset(preset, payload.difficulty, payload.levelId),
     shipMeshId: payload.shipMeshId,
   }
   screen.value = 'game'

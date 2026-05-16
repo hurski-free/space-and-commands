@@ -7,15 +7,18 @@ export default {
     subtitle: 'Choose language, ship, and difficulty, then start the run.',
     panelLanguage: 'Language',
     panelDifficulty: 'Difficulty',
+    panelLevel: 'Level',
     panelShip: 'Ship',
     ariaCommandLanguage: 'Command language',
     ariaDifficulty: 'Difficulty',
+    ariaLevel: 'Level',
     ariaShipHull: 'Ship hull',
     ariaShipPreview: 'Ship preview',
     ariaShipPreviewCanvas: 'Selected ship preview',
     shipTodoLabel: 'TODO',
     shipTodoHint: 'More hulls',
     startGame: 'Start game',
+    levelBadgeAria: 'Completed on {difficulty} difficulty',
     language: {
       en: { label: 'English', hint: 'Commands typed in English.' },
       ru: { label: 'Русский', hint: 'Команды на русском языке.' },
@@ -24,6 +27,24 @@ export default {
       cadet: { label: 'Cadet', hint: 'Forgiving typos, no hazards.' },
       officer: { label: 'Officer', hint: 'Balanced challenge.' },
       captain: { label: 'Captain', hint: 'Exact commands, sharper pressure.' },
+    },
+    level: {
+      sandbox: {
+        label: 'Sandbox',
+        hint: 'Home world + procedural rings; no objectives.',
+      },
+      'scan-tutorial': {
+        label: 'Scan drill',
+        hint: 'Three worlds thousands of units apart; scan any two.',
+      },
+      'visit-tutorial': {
+        label: 'Docking drill',
+        hint: 'Two distant worlds; dock on both with engines off.',
+      },
+      'mixed-tutorial': {
+        label: 'Recon & dock',
+        hint: 'Seven spread-out worlds; scan four and visit two.',
+      },
     },
     ship: {
       'orca-hauler': {
@@ -80,6 +101,13 @@ export default {
   game: {
     metaLanguage: 'Language',
     metaDifficulty: 'Difficulty',
+    metaLevel: 'Level',
+    hudTasks: 'Objectives',
+    levelComplete: 'Level complete',
+    task: {
+      scan_planets: 'Scan planets',
+      visit_planets: 'Visit planets',
+    },
     langName: { en: 'English', ru: 'Русский' },
     difficultyName: {
       cadet: 'Cadet',

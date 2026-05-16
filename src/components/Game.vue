@@ -5,6 +5,8 @@
         {{ t('game.metaLanguage') }}: <strong>{{ languageLabel }}</strong>
         ·
         {{ t('game.metaDifficulty') }}: <strong>{{ difficultyLabel }}</strong>
+        ·
+        {{ t('game.metaLevel') }}: <strong>{{ levelLabel }}</strong>
       </p>
       <div class="header-actions">
         <button type="button" class="sheet-btn" @click="lexiconOpen = true">
@@ -67,6 +69,21 @@
             <span v-if="hud.mainDamaged" class="fault">{{ t('game.faultMainEng') }}</span>
             <span v-if="hud.rcsDamaged" class="fault">{{ t('game.faultRcs') }}</span>
             <span v-if="hud.commsBroken" class="fault">{{ t('game.faultComms') }}</span>
+          </div>
+          <div v-if="hud.levelTasks.length" class="hud-tasks">
+            <p class="hud-tasks-title">{{ t('game.hudTasks') }}</p>
+            <ul class="hud-tasks-list">
+              <li
+                v-for="(task, index) in hud.levelTasks"
+                :key="`${task.kind}-${index}`"
+                class="hud-task"
+                :class="{ 'hud-task--done': task.complete }"
+              >
+                <span class="hud-task-label">{{ taskLabel(task.kind) }}</span>
+                <span class="hud-task-progress">{{ task.current }} / {{ task.target }}</span>
+              </li>
+            </ul>
+            <p v-if="hud.levelComplete" class="hud-level-complete">{{ t('game.levelComplete') }}</p>
           </div>
         </div>
 
@@ -153,6 +170,7 @@ import { getFuelCapacityTons } from '../game/domain/fuel-economy'
 import { DEFAULT_SHIP_MESH, SHIP_MESH_TEMPLATES } from '../ships'
 import { useHullTexture } from '../composables/use-hull-texture'
 import LexiconNotesDialog from './LexiconNotesDialog.vue'
+import { recordLevelCompletion } from '../level-progress-storage'
 
 const props = defineProps<{
   gameConfig: GameConfig
@@ -215,6 +233,13 @@ const hud = reactive({
   rcsDamaged: false,
   commsBroken: false,
   planetCount: 0,
+  levelTasks: [] as {
+    kind: 'scan_planets' | 'visit_planets'
+    current: number
+    target: number
+    complete: boolean
+  }[],
+  levelComplete: false,
 })
 
 // --- Command feedback + game-over (overlay + input disabled) ---
@@ -233,6 +258,8 @@ let acc = 0
 let lastTs: number | null = null
 let renderCtx: CanvasRenderingContext2D | null = null
 let animLoopActive = false
+/** Avoid writing completion to localStorage on every HUD sync frame. */
+let levelCompletionRecorded = false
 
 const sessionShipMesh = computed(
   () => SHIP_MESH_TEMPLATES[props.gameConfig.shipMeshId] ?? DEFAULT_SHIP_MESH,
@@ -251,6 +278,15 @@ const commandHint = computed(() =>
 const difficultyLabel = computed(() => t(`game.difficultyName.${props.gameConfig.difficulty}`))
 
 const languageLabel = computed(() => t(`game.langName.${props.gameConfig.language}`))
+
+const levelLabel = computed(() => {
+  const key = `main.level.${props.gameConfig.level.id}.label`
+  return t(key)
+})
+
+function taskLabel(kind: 'scan_planets' | 'visit_planets'): string {
+  return t(`game.task.${kind}`)
+}
 
 const voiceModeAllowed = computed(() => speechSupported.value && !hud.commsBroken)
 
@@ -275,6 +311,7 @@ function restartRun(): void {
   commandLine.value = ''
   feedback.value = ''
   gameOver.value = false
+  levelCompletionRecorded = false
   acc = 0
   lastTs = null
   simulator = createGameSession(props.gameConfig).simulator
@@ -500,7 +537,25 @@ function syncHud(): void {
   hud.rcsDamaged = ship.rotation.rcsDamaged
   hud.commsBroken = ship.commsBroken
   hud.planetCount = simulator.getWorld().planets.length
+  const progress = simulator.getLevelProgress()
+  hud.levelTasks = progress.tasks.map((task) => ({
+    kind: task.kind,
+    current: task.current,
+    target: task.target,
+    complete: task.complete,
+  }))
+  hud.levelComplete = progress.levelComplete
+  tryRecordLevelCompletion()
   gameOver.value = simulator.getWorld().gameOver
+}
+
+function tryRecordLevelCompletion(): void {
+  if (!simulator || levelCompletionRecorded) return
+  const { level, difficulty } = props.gameConfig
+  if (level.tasks.length === 0) return
+  if (!simulator.isLevelComplete()) return
+  recordLevelCompletion(level.id, difficulty)
+  levelCompletionRecorded = true
 }
 
 // Match canvas bitmap size to container × DPR; refresh renderer internal viewport.
@@ -648,6 +703,7 @@ function onGlobalKeyDown(e: KeyboardEvent): void {
 // Mount: create session, start RAF, listeners (resize, visibility, capture K for voice).
 onMounted(() => {
   speechSupported.value = !!getSpeechRecognitionConstructor()
+  levelCompletionRecorded = false
   simulator = createGameSession(props.gameConfig).simulator
   animLoopActive = true
   lastTs = null
@@ -867,6 +923,56 @@ onUnmounted(() => {
 .hud-row--small {
   font-size: 0.76rem;
   color: var(--muted);
+}
+
+.hud-tasks {
+  margin-top: 0.65rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--border);
+}
+
+.hud-tasks-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.hud-tasks-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.hud-task {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.hud-task--done {
+  color: var(--accent-dim);
+}
+
+.hud-task-progress {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.hud-task--done .hud-task-progress {
+  color: inherit;
+}
+
+.hud-level-complete {
+  margin: 0.45rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent-dim);
 }
 
 .hud-label {

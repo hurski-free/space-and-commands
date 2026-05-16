@@ -1,9 +1,9 @@
 import type { CompartmentId } from '../core/ids'
 import { getFuelCapacityTons } from '../domain/fuel-economy'
 import type { ShipState } from '../domain/ship'
-import { randomHexColor } from '../math'
-import { MIN_PLANET_MASS } from '../procedural/procedural.const'
 import { DEFAULT_SHIP_MESH, SHIP_MESH_TEMPLATES } from '../../ships'
+import type { LevelConfig } from './level-config'
+import { spawnPlanetFromLevel } from './level-config'
 import type { WorldState } from './world-state'
 
 function createInitialShip(initialFuelTons: number): ShipState {
@@ -32,24 +32,14 @@ function createInitialShip(initialFuelTons: number): ShipState {
   }
 }
 
-export function createInitialWorld(shipMeshId: string): WorldState {
+export function createInitialWorld(shipMeshId: string, level: LevelConfig): WorldState {
   const mesh = SHIP_MESH_TEMPLATES[shipMeshId] ?? DEFAULT_SHIP_MESH
   const capacity = getFuelCapacityTons(mesh)
   const initialFuelTons = capacity * 0.5
 
   return {
     ship: createInitialShip(initialFuelTons),
-    planets: [{
-      color: randomHexColor(),
-      id: 'home-planet',
-      hasFuelDeposits: true,
-      hasMetalDeposits: true,
-      massKg: MIN_PLANET_MASS,
-      positionX: 0,
-      positionY: 350,
-      radius: 100,
-      scanned: false
-    }],
+    planets: level.planets.map(spawnPlanetFromLevel),
     resourceScans: new Map(),
     gameOver: false,
   }

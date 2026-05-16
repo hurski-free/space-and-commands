@@ -7,15 +7,18 @@ export default {
     subtitle: 'Выберите язык команд, корабль и сложность, затем начните забег.',
     panelLanguage: 'Язык',
     panelDifficulty: 'Сложность',
+    panelLevel: 'Уровень',
     panelShip: 'Корабль',
     ariaCommandLanguage: 'Язык команд',
     ariaDifficulty: 'Сложность',
+    ariaLevel: 'Уровень',
     ariaShipHull: 'Корпус корабля',
     ariaShipPreview: 'Предпросмотр корабля',
     ariaShipPreviewCanvas: 'Предпросмотр выбранного корабля',
     shipTodoLabel: 'TODO',
     shipTodoHint: 'Ещё корпуса',
     startGame: 'Начать игру',
+    levelBadgeAria: 'Пройдено на сложности «{difficulty}»',
     language: {
       en: { label: 'English', hint: 'Commands typed in English.' },
       ru: { label: 'Русский', hint: 'Команды на русском языке.' },
@@ -24,6 +27,24 @@ export default {
       cadet: { label: 'Кадет', hint: 'Мягче к опечаткам, без аварий.' },
       officer: { label: 'Офицер', hint: 'Сбалансированная сложность.' },
       captain: { label: 'Капитан', hint: 'Строгие команды, выше давление.' },
+    },
+    level: {
+      sandbox: {
+        label: 'Песочница',
+        hint: 'Домашний мир и кольца планет; без целей.',
+      },
+      'scan-tutorial': {
+        label: 'Сканирование',
+        hint: 'Три далёкие планеты; просканируйте любые две.',
+      },
+      'visit-tutorial': {
+        label: 'Посадка',
+        hint: 'Две далёкие планеты; стыковка с выключенными двигателями.',
+      },
+      'mixed-tutorial': {
+        label: 'Разведка и стыковка',
+        hint: 'Семь разнесённых миров; сканировать 4, посетить 2.',
+      },
     },
     ship: {
       'orca-hauler': {
@@ -79,6 +100,13 @@ export default {
   game: {
     metaLanguage: 'Язык',
     metaDifficulty: 'Сложность',
+    metaLevel: 'Уровень',
+    hudTasks: 'Задачи',
+    levelComplete: 'Уровень пройден',
+    task: {
+      scan_planets: 'Сканировать планеты',
+      visit_planets: 'Посетить планеты',
+    },
     langName: { en: 'English', ru: 'Русский' },
     difficultyName: {
       cadet: 'Кадет',

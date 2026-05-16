@@ -27,6 +27,8 @@ import {
   structuralStrengthForHull,
 } from '../physics/planet-landing'
 import { consumeFuelPerTick } from '../domain/fuel-economy'
+import type { LevelProgressView } from '../domain/level-tasks'
+import { LevelTaskTracker } from '../domain/level-tasks'
 import { extractPlanetaryResourcesPerTick } from '../domain/planet-resources'
 import { hashSeed, mulberry32 } from '../core/rng'
 import { DEFAULT_SHIP_MESH, SHIP_MESH_TEMPLATES } from '../../ships'
@@ -55,6 +57,7 @@ export class GameSimulator {
   private readonly physics: PhysicsEngine
   private readonly randomEvents: IRandomEventScheduler
   private readonly eventApplier: IOperationalEventApplier
+  private readonly levelTasks: LevelTaskTracker
   private readonly landingRng: () => number
 
   constructor(
@@ -67,6 +70,7 @@ export class GameSimulator {
     physics: PhysicsEngine,
     randomEvents: IRandomEventScheduler,
     eventApplier: IOperationalEventApplier,
+    levelTasks: LevelTaskTracker,
   ) {
     this.config = config
     this.world = world
@@ -77,9 +81,12 @@ export class GameSimulator {
     this.physics = physics
     this.randomEvents = randomEvents
     this.eventApplier = eventApplier
+    this.levelTasks = levelTasks
     this.landingRng = mulberry32(hashSeed(`${config.rngSeed ?? ''}:planet-landing`))
 
-    this.appendProceduralRing(0)
+    if (config.level.proceduralPlanetGenerationEnabled) {
+      this.appendProceduralRing(0)
+    }
   }
 
   getWorld(): WorldState {
@@ -146,11 +153,21 @@ export class GameSimulator {
     return this.tickIndex
   }
 
+  getLevelProgress(): LevelProgressView {
+    return this.levelTasks.getProgress()
+  }
+
+  isLevelComplete(): boolean {
+    return this.levelTasks.isLevelComplete()
+  }
+
   /**
    * Ring n occupies [50k·n+5k, 50k·(n+1)] (world units).
    * n=0 is generated immediately; n≥1 when |ship| >= 50k·n+40k.
    */
   private extendProceduralRingsIfNeeded(): void {
+    if (!this.config.level.proceduralPlanetGenerationEnabled) return
+
     const { x, y } = this.world.ship.body.position
     const r = Math.hypot(x, y)
     while (r >= ringGenerationTriggerDistance(this.nextSpaceRingIndex)) {
@@ -195,8 +212,17 @@ export class GameSimulator {
 
     resolveShipOnPlanetSurface(ship, contacted, hull)
     if (areAllEnginesOff(ship)) {
-      ship.planetAttachment = { planetId: contacted.id }
+      this.attachToPlanet(contacted.id)
     }
     return true
+  }
+
+  private attachToPlanet(planetId: string): void {
+    const ship = this.world.ship
+    const alreadyAttached = ship.planetAttachment?.planetId === planetId
+    ship.planetAttachment = { planetId }
+    if (!alreadyAttached) {
+      this.levelTasks.recordVisit(planetId)
+    }
   }
 }

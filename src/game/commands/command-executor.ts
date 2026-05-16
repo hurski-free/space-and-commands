@@ -1,4 +1,5 @@
 import type { ParsedCommand } from './command-types'
+import type { LevelTaskTracker } from '../domain/level-tasks'
 import type { WorldState } from '../simulation/world-state'
 import type { CompartmentId } from '../core/ids'
 import type { PlanetBody } from '../domain/planet'
@@ -36,6 +37,12 @@ function scanNearestPlanet(shipX: number, shipY: number, planets: readonly Plane
 }
 
 export class ShipCommandExecutor implements ICommandExecutor {
+  private readonly levelTasks: LevelTaskTracker | null
+
+  constructor(levelTasks: LevelTaskTracker | null = null) {
+    this.levelTasks = levelTasks
+  }
+
   apply(world: WorldState, command: ParsedCommand): void {
     if (world.gameOver) return
     const ship = world.ship
@@ -104,12 +111,16 @@ export class ShipCommandExecutor implements ICommandExecutor {
       case 'scan_nearest_planet': {
         const p = scanNearestPlanet(ship.body.position.x, ship.body.position.y, world.planets)
         if (p) {
+          const wasScanned = p.scanned
           p.scanned = true
           world.resourceScans.set(p.id, {
             planetId: p.id,
             hasFuelDeposits: p.hasFuelDeposits,
             hasMetalDeposits: p.hasMetalDeposits,
           })
+          if (!wasScanned) {
+            this.levelTasks?.recordScan(p.id)
+          }
         }
         break
       }

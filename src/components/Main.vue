@@ -53,6 +53,33 @@
         </ul>
       </section>
 
+      <section class="panel panel-compact" aria-labelledby="level-heading">
+        <h2 id="level-heading" class="panel-title">{{ t('main.panelLevel') }}</h2>
+        <ul class="option-list option-list--col" role="radiogroup" :aria-label="t('main.ariaLevel')">
+          <li v-for="opt in levelOptions" :key="opt.id" class="option-list-item">
+            <label class="difficulty-option">
+              <input
+                v-model="selectedLevelId"
+                type="radio"
+                name="level"
+                :value="opt.id"
+                class="sr-only"
+              />
+              <span class="option-card">
+                <Badge
+                  v-if="opt.completedDifficulty"
+                  :difficulty="opt.completedDifficulty"
+                  top="calc(100% - 0.75rem)"
+                  left="100%"
+                />
+                <span class="option-label">{{ opt.label }}</span>
+                <span class="option-hint">{{ opt.hint }}</span>
+              </span>
+            </label>
+          </li>
+        </ul>
+      </section>
+
       <section class="panel panel-compact panel-ship-pick" aria-labelledby="ship-heading">
         <h2 id="ship-heading" class="panel-title">{{ t('main.panelShip') }}</h2>
         <ul class="option-list option-list--row" role="radiogroup" :aria-label="t('main.ariaShipHull')">
@@ -142,20 +169,21 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Difficulty, getLocalePreset } from '../game'
-import type { CommandLanguage, GameConfig } from '../game'
+import { DEFAULT_LEVEL_ID, Difficulty, LEVEL_CONFIGS, getLocalePreset } from '../game'
+import type { CommandLanguage, Difficulty as DifficultyLevel } from '../game'
+import Badge from './Badge.vue'
 import InfoDialog from './InfoDialog.vue'
 import LexiconNotesDialog from './LexiconNotesDialog.vue'
 import ShipPreviewLobby from './ShipPreviewLobby.vue'
+import { loadLevelCompletions } from '../level-progress-storage'
 import { loadLobbyPreferences, saveLobbyPreferences } from '../preferences-storage'
 import { DEFAULT_SHIP_MESH, SHIP_MESH_TEMPLATES } from '../ships'
-
-type DifficultyLevel = GameConfig['difficulty']
 
 export interface MainStartPayload {
   readonly difficulty: DifficultyLevel
   readonly language: CommandLanguage
   readonly shipMeshId: string
+  readonly levelId: string
 }
 
 const emit = defineEmits<{
@@ -223,22 +251,53 @@ const options = computed(() =>
 
 const selected = ref<DifficultyLevel>(Difficulty.Officer)
 
+const levelOrder = ['sandbox', 'scan-tutorial', 'visit-tutorial', 'mixed-tutorial'] as const
+
+const levelCompletions = ref<Readonly<Record<string, DifficultyLevel>>>({})
+
+function refreshLevelCompletions(): void {
+  const stored = loadLevelCompletions()
+  const map: Record<string, DifficultyLevel> = {}
+  for (const [levelId, record] of Object.entries(stored)) {
+    map[levelId] = record.difficulty
+  }
+  levelCompletions.value = map
+}
+
+const levelOptions = computed(() =>
+  levelOrder
+    .filter((id) => id in LEVEL_CONFIGS)
+    .map((id) => ({
+      id,
+      label: t(`main.level.${id}.label`),
+      hint: t(`main.level.${id}.hint`),
+      completedDifficulty: levelCompletions.value[id] ?? null,
+    })),
+)
+
+const selectedLevelId = ref<string>(DEFAULT_LEVEL_ID)
+
 // Restore last lobby choices; invalid ship id is ignored.
 onMounted(() => {
+  refreshLevelCompletions()
   const saved = loadLobbyPreferences()
   if (saved.language) selectedLanguage.value = saved.language
   if (saved.difficulty) selected.value = saved.difficulty
   if (saved.shipMeshId && saved.shipMeshId in SHIP_MESH_TEMPLATES) {
     selectedShipId.value = saved.shipMeshId
   }
+  if (saved.levelId && saved.levelId in LEVEL_CONFIGS) {
+    selectedLevelId.value = saved.levelId
+  }
 })
 
 // Persist on any change so refresh keeps settings.
-watch([selectedLanguage, selected, selectedShipId], () => {
+watch([selectedLanguage, selected, selectedShipId, selectedLevelId], () => {
   saveLobbyPreferences({
     language: selectedLanguage.value,
     difficulty: selected.value,
     shipMeshId: selectedShipId.value,
+    levelId: selectedLevelId.value,
   })
 })
 
@@ -247,11 +306,13 @@ function onStart(): void {
     language: selectedLanguage.value,
     difficulty: selected.value,
     shipMeshId: selectedShipId.value,
+    levelId: selectedLevelId.value,
   })
   emit('start', {
     difficulty: selected.value,
     language: selectedLanguage.value,
     shipMeshId: selectedShipId.value,
+    levelId: selectedLevelId.value,
   })
 }
 </script>
@@ -382,6 +443,7 @@ function onStart(): void {
 }
 
 .option-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -420,6 +482,10 @@ function onStart(): void {
 .option-label {
   font-weight: 600;
   color: var(--text-h);
+}
+
+#level-heading ~ .option-list .option-label {
+  padding-right: 3.5rem;
 }
 
 .option-hint {

@@ -1,6 +1,7 @@
 import type { Difficulty } from '../core/difficulty'
 import { getDifficultyProfile } from '../core/difficulty-config'
 import type { CommandLanguage } from '../core/ids'
+import { DEFAULT_LEVEL_ID, getLevelConfig } from '../levels'
 import type { GameConfig, GameConfigLocalePreset } from '../simulation/game-config'
 import { englishGameConfigPreset } from './en'
 import { russianGameConfigPreset } from './ru'
@@ -17,10 +18,12 @@ export function getLocalePreset(language: CommandLanguage): GameConfigLocalePres
 export function buildGameConfigFromPreset(
   preset: GameConfigLocalePreset,
   difficulty: Difficulty,
+  levelId: string = DEFAULT_LEVEL_ID,
 ): GameConfig {
   return {
     ...preset,
     difficulty,
     difficultyProfile: getDifficultyProfile(difficulty),
+    level: getLevelConfig(levelId),
   }
 }
