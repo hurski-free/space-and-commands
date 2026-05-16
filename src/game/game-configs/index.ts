@@ -1,4 +1,5 @@
 import type { Difficulty } from '../core/difficulty'
+import { getDifficultyProfile } from '../core/difficulty-config'
 import type { CommandLanguage } from '../core/ids'
 import type { GameConfig, GameConfigLocalePreset } from '../simulation/game-config'
 import { englishGameConfigPreset } from './en'
@@ -20,5 +21,6 @@ export function buildGameConfigFromPreset(
   return {
     ...preset,
     difficulty,
+    difficultyProfile: getDifficultyProfile(difficulty),
   }
 }

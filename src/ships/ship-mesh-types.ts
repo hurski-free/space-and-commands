@@ -19,6 +19,12 @@ export interface ShipMeshTemplate {
    * `structuralStrength / (speed * mass)` (see game simulator).
    */
   readonly structuralStrength?: number
+  /** Maximum propellant tank capacity (metric tons). */
+  readonly fuelCapacityTons?: number
+  /** Fuel mined per simulation tick while landed on a deposit (metric tons). */
+  readonly fuelExtractionTonsPerTick?: number
+  /** Metal mined per simulation tick while landed on a deposit (metric tons). */
+  readonly metalExtractionTonsPerTick?: number
   /**
    * Landing attitude: longitudinal axis is **tail → nose** (+X local, `headingRad` in world).
    * We compare the angle between **outward radial** (planet center → ship) and that axis to `landingNominalRadialToNoseDeg`.

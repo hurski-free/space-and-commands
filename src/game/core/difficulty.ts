@@ -1,5 +1,5 @@
 /**
- * Global difficulty affects typo tolerance, event frequency, and time pressure.
+ * Difficulty id chosen in the lobby. Numeric knobs live in `difficulty-config.ts`.
  */
 
 export const Difficulty = {

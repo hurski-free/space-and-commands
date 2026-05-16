@@ -1,4 +1,4 @@
-import type { Difficulty } from '../core/difficulty'
+import type { DifficultyTypoConfig } from '../core/difficulty-config'
 import type { CommandLanguage, CompartmentId } from '../core/ids'
 
 /**
@@ -25,7 +25,7 @@ export type ParsedCommand =
 export interface ParseContext {
   readonly language: CommandLanguage
   readonly rawText: string
-  readonly difficulty: Difficulty
+  readonly typo: DifficultyTypoConfig
 }
 
 interface ParseSuccess {

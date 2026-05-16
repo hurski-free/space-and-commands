@@ -1,12 +1,13 @@
-import { Difficulty } from '../core/difficulty'
+import type { DifficultyTypoConfig } from '../core/difficulty-config'
+import { maxTyposForTokenLength } from '../core/difficulty-config'
 import { levenshtein } from './text-utils'
 
 /**
- * Pluggable typo tolerance: Levenshtein budget, phonetic rules, etc.
+ * Pluggable typo tolerance: Levenshtein budget from difficulty config.
  */
 
 export interface TypoPolicyContext {
-  readonly difficulty: Difficulty
+  readonly typo: DifficultyTypoConfig
 }
 
 export interface ITypoPolicy {
@@ -19,17 +20,7 @@ export interface ITypoPolicy {
 
 export class DifficultyTypoPolicy implements ITypoPolicy {
   maxDistanceForToken(tokenLength: number, ctx: TypoPolicyContext): number {
-    const d = ctx.difficulty
-    if (d === Difficulty.Captain) return 0
-    if (d === Difficulty.Cadet) {
-      if (tokenLength >= 14) return 2
-      if (tokenLength >= 7) return 1
-      return 0
-    }
-    if (d === Difficulty.Officer) {
-      return tokenLength >= 6 ? 1 : 0
-    }
-    return 0
+    return maxTyposForTokenLength(tokenLength, ctx.typo)
   }
 
   isMatch(expected: string, actual: string, ctx: TypoPolicyContext): boolean {

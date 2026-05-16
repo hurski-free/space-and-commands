@@ -4,6 +4,13 @@
 
 export type { CommandLanguage } from './core/ids'
 export * from './core/difficulty'
+export type {
+  DifficultyEventConfig,
+  DifficultyProfile,
+  DifficultyTypoConfig,
+  TypoToleranceRule,
+} from './core/difficulty-config'
+export { getDifficultyProfile, maxTyposForTokenLength } from './core/difficulty-config'
 
 export type { GameConfig } from './simulation/game-config'
 export {

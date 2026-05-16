@@ -37,7 +37,7 @@ export class CommandParser implements ICommandParser {
       return { ok: false, reason: 'empty', message: 'Empty command' }
     }
     const normalized = normalizeCommandInput(raw)
-    const typoCtx: TypoPolicyContext = { difficulty: ctx.difficulty }
+    const typoCtx: TypoPolicyContext = { typo: ctx.typo }
 
     const candidates: Candidate[] = []
     for (const entry of lexicon.entries()) {

@@ -52,24 +52,25 @@ export function resolveShipOnPlanetSurface(
     shipHullIntersectsPlanetDisc(pcx, pcy, discR, shipHullWorldVerticesAt(mesh, h, cx, cy))
 
   if (!intersectsAt(position.x, position.y)) {
-    position.x += nx * clearance
-    position.y += ny * clearance
-  } else {
-    let hi = 1
-    while (hi < 1e7 && intersectsAt(position.x + nx * hi, position.y + ny * hi)) {
-      hi *= 2
-    }
-    let lo = 0
-    let high = hi
-    for (let i = 0; i < 40; i++) {
-      const mid = (lo + high) / 2
-      if (intersectsAt(position.x + nx * mid, position.y + ny * mid)) lo = mid
-      else high = mid
-    }
-    const t = high
-    position.x += nx * t
-    position.y += ny * t
+    ship.body.velocity.x = 0
+    ship.body.velocity.y = 0
+    ship.body.angularVelocityRadPerSec = 0
+    return
   }
+
+  let hi = 1
+  while (hi < 1e7 && intersectsAt(position.x + nx * hi, position.y + ny * hi)) {
+    hi *= 2
+  }
+  let lo = 0
+  let high = hi
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + high) / 2
+    if (intersectsAt(position.x + nx * mid, position.y + ny * mid)) lo = mid
+    else high = mid
+  }
+  position.x += nx * high
+  position.y += ny * high
 
   ship.body.velocity.x = 0
   ship.body.velocity.y = 0

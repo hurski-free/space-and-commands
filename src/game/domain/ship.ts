@@ -19,7 +19,8 @@ interface ShipRigidBody {
 }
 
 interface ShipCargoAndTanks {
-  fuelUnits: number
+  /** Propellant in metric tons. */
+  fuelTons: number
   metalUnits: number
 }
 
@@ -29,10 +30,16 @@ export interface ShipState {
   rotation: RotationState
   mainFuelLine: MainEngineFuelLineState
   maneuverFuelLine: ManeuverFuelLineState
+  /** Resting on a planet while all propulsion is off; cleared when any engine fires. */
+  planetAttachment: PlanetAttachment | null
   /** Voice / data link down until repaired (random hazard). */
   commsBroken: boolean
   compartments: CompartmentState[]
   cargo: ShipCargoAndTanks
+}
+
+export interface PlanetAttachment {
+  readonly planetId: string
 }
 
 /** Read-only snapshot for UI / renderer (implementation may deep-freeze or copy). */

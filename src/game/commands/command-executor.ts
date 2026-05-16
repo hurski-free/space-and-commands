@@ -104,6 +104,7 @@ export class ShipCommandExecutor implements ICommandExecutor {
       case 'scan_nearest_planet': {
         const p = scanNearestPlanet(ship.body.position.x, ship.body.position.y, world.planets)
         if (p) {
+          p.scanned = true
           world.resourceScans.set(p.id, {
             planetId: p.id,
             hasFuelDeposits: p.hasFuelDeposits,

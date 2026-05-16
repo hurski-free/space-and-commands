@@ -1,4 +1,5 @@
 import type { Difficulty } from '../core/difficulty'
+import type { DifficultyProfile } from '../core/difficulty-config'
 import type { CommandLanguage } from '../core/ids'
 import type { LexiconEntry } from '../commands/lexicon'
 
@@ -9,6 +10,8 @@ import type { LexiconEntry } from '../commands/lexicon'
 export interface GameConfig {
   readonly language: CommandLanguage
   readonly difficulty: Difficulty
+  /** Typo and hazard knobs resolved from `difficulty` at session start. */
+  readonly difficultyProfile: DifficultyProfile
   /** Hull mesh id from `SHIP_MESH_TEMPLATES` (canvas). */
   readonly shipMeshId: string
   /** Fixed timestep for deterministic simulation (optional variable step). */
@@ -21,4 +24,4 @@ export interface GameConfig {
 /**
  * Locale-specific defaults merged with player-chosen difficulty at session start.
  */
-export type GameConfigLocalePreset = Omit<GameConfig, 'difficulty'>
+export type GameConfigLocalePreset = Omit<GameConfig, 'difficulty' | 'difficultyProfile'>

@@ -1,3 +1,4 @@
+import { hasUsableFuel } from '../domain/fuel-economy'
 import type { PlanetBody } from '../domain/planet'
 import type { ShipState } from '../domain/ship'
 import type { ShipMeshTemplate } from '../../ships/ship-mesh-types'
@@ -45,7 +46,8 @@ export class PhysicsEngine {
     this.deps.integrator.integrateLinear(body, deltaTimeSec)
 
     const rot = ship.rotation
-    const maneuverOk = !ship.maneuverFuelLine.broken && !rot.rcsDamaged
+    const maneuverOk =
+      hasUsableFuel(ship) && !ship.maneuverFuelLine.broken && !rot.rcsDamaged
     let torque = maneuverOk ? rot.torquePercent / 100 : 0
     if (rot.commandedHold && Math.abs(rot.torquePercent) < 1e-6) {
       body.angularVelocityRadPerSec *= Math.exp(-3 * deltaTimeSec)
@@ -71,7 +73,7 @@ export class PhysicsEngine {
   ): Force2 {
     void _deltaTimeSec
     const me = ship.mainEngine
-    const fuelOk = !ship.mainFuelLine.broken && !me.damaged
+    const fuelOk = hasUsableFuel(ship) && !ship.mainFuelLine.broken && !me.damaged
     let throttle = 0
     if (fuelOk && !me.commandedStop) {
       throttle = Math.max(0, Math.min(100, me.throttlePercent)) / 100

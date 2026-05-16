@@ -1,3 +1,4 @@
+import { hasUsableFuel } from '../domain/fuel-economy'
 import type { PlanetBody } from '../domain/planet'
 import type { GameRenderModel } from './render-model'
 import { mulberry32 } from '../core/rng'
@@ -334,7 +335,7 @@ export class CanvasGameRenderer implements IGameRenderer {
     ctx.restore()
 
     const me = model.ship.mainEngine
-    const fuelOk = !model.ship.mainFuelLine.broken && !me.damaged
+    const fuelOk = hasUsableFuel(model.ship) && !model.ship.mainFuelLine.broken && !me.damaged
     const thrusting = fuelOk && !me.commandedStop && me.throttlePercent > 0.5
 
     if (thrusting) {

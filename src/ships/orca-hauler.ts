@@ -14,6 +14,9 @@ export const orcaHaulerMesh: ShipMeshTemplate = {
   displayName: 'Orca hauler',
   /** Tuned vs default mass (~11t) and typical approach speeds. */
   structuralStrength: 500_000,
+  fuelCapacityTons: 800,
+  fuelExtractionTonsPerTick: 1, // 60 ticks per seconds
+  metalExtractionTonsPerTick: 0.5,
   /** Nose along local horizon; tail/engine end is the reference end of the longitudinal axis. */
   landingNominalRadialToNoseDeg: 0,
   landingMaxDeviationDeg: 17,

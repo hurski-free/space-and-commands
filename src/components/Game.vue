@@ -45,16 +45,28 @@
             <span class="hud-label">{{ t('game.hudRot') }}</span>
             <span class="hud-val">{{ hud.torque > 0 ? '+' : '' }}{{ hud.torque }}</span>
           </div>
+          <div class="hud-row hud-row--fuel">
+            <span class="hud-label">{{ t('game.hudFuel') }}</span>
+            <div class="hud-fuel-block">
+              <div
+                class="hud-fuel-bar"
+                role="progressbar"
+                :aria-valuenow="hud.fuelTons"
+                :aria-valuemin="0"
+                :aria-valuemax="hud.fuelCapacityTons"
+                :aria-label="t('game.hudFuelAria')"
+              >
+                <div class="hud-fuel-fill" :style="{ width: `${hud.fuelFillPct}%` }" />
+              </div>
+              <span class="hud-fuel-tonnes">{{ hud.fuelLabel }}</span>
+            </div>
+          </div>
           <div class="hud-row hud-row--small">
             <span v-if="hud.mainFuelBroken" class="fault">{{ t('game.faultMainLine') }}</span>
             <span v-if="hud.maneuverBroken" class="fault">{{ t('game.faultManeuver') }}</span>
             <span v-if="hud.mainDamaged" class="fault">{{ t('game.faultMainEng') }}</span>
             <span v-if="hud.rcsDamaged" class="fault">{{ t('game.faultRcs') }}</span>
             <span v-if="hud.commsBroken" class="fault">{{ t('game.faultComms') }}</span>
-          </div>
-          <div class="hud-row hud-row--small">
-            <span class="hud-label">{{ t('game.hudBodies') }}</span>
-            <span class="hud-val">{{ hud.planetCount }}</span>
           </div>
         </div>
 
@@ -137,6 +149,7 @@ import {
   type SpeechRecognitionEventLike,
   type SpeechRecognitionLike,
 } from '../speech-recognition-support'
+import { getFuelCapacityTons } from '../game/domain/fuel-economy'
 import { DEFAULT_SHIP_MESH, SHIP_MESH_TEMPLATES } from '../ships'
 import { useHullTexture } from '../composables/use-hull-texture'
 import LexiconNotesDialog from './LexiconNotesDialog.vue'
@@ -192,6 +205,10 @@ const hud = reactive({
   mainPct: 0,
   mainStop: true,
   torque: 0,
+  fuelTons: 0,
+  fuelCapacityTons: 0,
+  fuelFillPct: 0,
+  fuelLabel: '0 / 0 t',
   mainFuelBroken: false,
   maneuverBroken: false,
   mainDamaged: false,
@@ -471,6 +488,12 @@ function syncHud(): void {
   hud.mainPct = Math.round(ship.mainEngine.throttlePercent)
   hud.mainStop = ship.mainEngine.commandedStop
   hud.torque = Math.round(ship.rotation.torquePercent)
+  const fuelCap = getFuelCapacityTons(sessionShipMesh.value)
+  const fuel = ship.cargo.fuelTons
+  hud.fuelTons = fuel
+  hud.fuelCapacityTons = fuelCap
+  hud.fuelFillPct = fuelCap > 0 ? Math.min(100, (fuel / fuelCap) * 100) : 0
+  hud.fuelLabel = `${fuel.toFixed(1)} / ${fuelCap.toFixed(0)} t`
   hud.mainFuelBroken = ship.mainFuelLine.broken
   hud.maneuverBroken = ship.maneuverFuelLine.broken
   hud.mainDamaged = ship.mainEngine.damaged
@@ -862,6 +885,50 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--accent-dim);
+}
+
+.hud-row--fuel {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.hud-row--fuel .hud-label {
+  min-width: 0;
+}
+
+.hud-fuel-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.hud-fuel-bar {
+  height: 0.55rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--input-bg) 85%, #000);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.hud-fuel-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent-dim) 75%, #3a6a4a),
+    var(--accent-dim)
+  );
+  transition: width 0.12s ease-out;
+}
+
+.hud-fuel-tonnes {
+  font-size: 0.76rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-h);
+  text-align: right;
 }
 
 .fault {

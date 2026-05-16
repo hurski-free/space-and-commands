@@ -1,10 +1,12 @@
 import type { CompartmentId } from '../core/ids'
+import { getFuelCapacityTons } from '../domain/fuel-economy'
 import type { ShipState } from '../domain/ship'
 import { randomHexColor } from '../math'
 import { MIN_PLANET_MASS } from '../procedural/procedural.const'
+import { DEFAULT_SHIP_MESH, SHIP_MESH_TEMPLATES } from '../../ships'
 import type { WorldState } from './world-state'
 
-function createInitialShip(): ShipState {
+function createInitialShip(initialFuelTons: number): ShipState {
   const compartments = [1, 2, 3, 4, 5].map((id) => ({
     id: id as CompartmentId,
     activeFault: null,
@@ -23,15 +25,20 @@ function createInitialShip(): ShipState {
     rotation: { torquePercent: 0, commandedHold: false, rcsDamaged: false },
     mainFuelLine: { broken: false },
     maneuverFuelLine: { broken: false },
+    planetAttachment: null,
     commsBroken: false,
     compartments,
-    cargo: { fuelUnits: 100, metalUnits: 0 },
+    cargo: { fuelTons: initialFuelTons, metalUnits: 0 },
   }
 }
 
-export function createInitialWorld(): WorldState {
+export function createInitialWorld(shipMeshId: string): WorldState {
+  const mesh = SHIP_MESH_TEMPLATES[shipMeshId] ?? DEFAULT_SHIP_MESH
+  const capacity = getFuelCapacityTons(mesh)
+  const initialFuelTons = capacity * 0.5
+
   return {
-    ship: createInitialShip(),
+    ship: createInitialShip(initialFuelTons),
     planets: [{
       color: randomHexColor(),
       id: 'home-planet',

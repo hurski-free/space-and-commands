@@ -22,7 +22,7 @@ export interface GameSession {
  * Wires default services for a playable session (same world instance the simulator mutates).
  */
 export function createGameSession(config: GameConfig): GameSession {
-  const world = createInitialWorld()
+  const world = createInitialWorld(config.shipMeshId)
   const physics = new PhysicsEngine({
     gravity: new GravityModel(),
     linearAcceleration: new LinearAccelerationModel(),
@@ -32,7 +32,7 @@ export function createGameSession(config: GameConfig): GameSession {
   const lexicon = new StaticCommandLexicon(config.language, config.lexicon)
   const typoPolicy = new DifficultyTypoPolicy()
   const commandExecutor = new ShipCommandExecutor()
-  const randomEvents = new RandomEventScheduler()
+  const randomEvents = new RandomEventScheduler(config.difficultyProfile.events)
   randomEvents.reset(config.rngSeed)
   const eventApplier = new OperationalEventApplier()
 

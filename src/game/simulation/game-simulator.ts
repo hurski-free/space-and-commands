@@ -13,17 +13,24 @@ import {
   generateBodiesForRing,
   createRingRng,
 } from '../procedural/space-rings'
+import { findFirstIntersectingPlanet, resolveShipOnPlanetSurface } from '../physics/planet-collision'
 import {
-  findFirstIntersectingPlanet,
-  resolveShipOnPlanetSurface,
-} from '../physics/planet-collision'
+  areAllEnginesOff,
+  findPlanetById,
+  isMainEngineActive,
+  isManeuverEngineActive,
+  maintainPlanetAttachment,
+} from '../physics/planet-attachment'
 import {
   computeLandingChanceFactor,
   isLandingAttitudeWithinTolerance,
   structuralStrengthForHull,
 } from '../physics/planet-landing'
+import { consumeFuelPerTick } from '../domain/fuel-economy'
+import { extractPlanetaryResourcesPerTick } from '../domain/planet-resources'
 import { hashSeed, mulberry32 } from '../core/rng'
 import { DEFAULT_SHIP_MESH, SHIP_MESH_TEMPLATES } from '../../ships'
+import type { ShipMeshTemplate } from '../../ships/ship-mesh-types'
 
 /**
  * Facade for one game session: wires parser → executor → physics → hazards each tick.
@@ -86,36 +93,28 @@ export class GameSimulator {
     this.elapsedSec += deltaTimeSec
     this.extendProceduralRingsIfNeeded()
     const hull = SHIP_MESH_TEMPLATES[this.config.shipMeshId] ?? DEFAULT_SHIP_MESH
-    this.physics.step(this.world.ship, this.world.planets, deltaTimeSec, hull)
+    const ship = this.world.ship
 
-    const contacted = findFirstIntersectingPlanet(this.world.ship, this.world.planets, hull)
-    if (contacted) {
-      if (
-        !isLandingAttitudeWithinTolerance(
-          this.world.ship.body.headingRad,
-          contacted,
-          this.world.ship.body.position,
-          hull,
-        )
-      ) {
-        this.world.gameOver = true
-        return
-      }
-      const strength = structuralStrengthForHull(hull.structuralStrength)
-      const { velocity, massKg } = this.world.ship.body
-      const speed = Math.hypot(velocity.x, velocity.y)
-      const factor = computeLandingChanceFactor(strength, speed, massKg)
-      const survived = factor >= 1 || this.landingRng() < factor
+    if (ship.planetAttachment && (isMainEngineActive(ship) || isManeuverEngineActive(ship))) {
+      ship.planetAttachment = null
+    }
 
-      if (!survived) {
-        this.world.gameOver = true
-        return
+    const attachedPlanet = ship.planetAttachment
+      ? findPlanetById(this.world.planets, ship.planetAttachment.planetId)
+      : null
+    if (attachedPlanet && areAllEnginesOff(ship)) {
+      maintainPlanetAttachment(ship, attachedPlanet, hull)
+      extractPlanetaryResourcesPerTick(ship, hull, this.world.resourceScans, attachedPlanet.id)
+    } else {
+      if (ship.planetAttachment && !attachedPlanet) {
+        ship.planetAttachment = null
       }
-      resolveShipOnPlanetSurface(this.world.ship, contacted, hull)
+      consumeFuelPerTick(ship)
+      this.physics.step(ship, this.world.planets, deltaTimeSec, hull)
+      if (!this.resolvePlanetContact(hull)) return
     }
 
     const evt = this.randomEvents.maybeNextEvent({
-      difficulty: this.config.difficulty,
       elapsedSec: this.elapsedSec,
       tickIndex: this.tickIndex,
     })
@@ -130,7 +129,7 @@ export class GameSimulator {
     const ctx: ParseContext = {
       language: this.config.language,
       rawText,
-      difficulty: this.config.difficulty,
+      typo: this.config.difficultyProfile.typo,
     }
     const result = this.parser.parse(ctx, this.lexicon, this.typoPolicy)
     if (result.ok) {
@@ -163,5 +162,41 @@ export class GameSimulator {
   private appendProceduralRing(ringIndex: number): void {
     const rng = createRingRng(this.config.rngSeed, ringIndex)
     this.world.planets.push(...generateBodiesForRing(ringIndex, rng))
+  }
+
+  /** Returns false if the run ended (crash / failed landing). */
+  private resolvePlanetContact(hull: ShipMeshTemplate): boolean {
+    const ship = this.world.ship
+    const contacted = findFirstIntersectingPlanet(ship, this.world.planets, hull)
+    if (!contacted) return true
+
+    if (
+      !isLandingAttitudeWithinTolerance(
+        ship.body.headingRad,
+        contacted,
+        ship.body.position,
+        hull,
+      )
+    ) {
+      this.world.gameOver = true
+      return false
+    }
+
+    const strength = structuralStrengthForHull(hull.structuralStrength)
+    const { velocity, massKg } = ship.body
+    const speed = Math.hypot(velocity.x, velocity.y)
+    const factor = computeLandingChanceFactor(strength, speed, massKg)
+    const survived = factor >= 1 || this.landingRng() < factor
+
+    if (!survived) {
+      this.world.gameOver = true
+      return false
+    }
+
+    resolveShipOnPlanetSurface(ship, contacted, hull)
+    if (areAllEnginesOff(ship)) {
+      ship.planetAttachment = { planetId: contacted.id }
+    }
+    return true
   }
 }

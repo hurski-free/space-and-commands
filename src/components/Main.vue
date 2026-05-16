@@ -95,9 +95,34 @@
     </div>
 
     <InfoDialog v-model="infoOpen" :title="t('main.infoTitle')" :close-aria="t('main.close')">
-      <p>{{ t('main.infoLine0') }}</p>
-      <p>{{ t('main.infoLine1') }}</p>
-      <p>{{ t('main.infoLineVoice') }}</p>
+      <p class="info-lead">{{ t('main.infoIntro') }}</p>
+
+      <h3 class="info-section-title">{{ t('main.infoSecControls') }}</h3>
+      <p>{{ t('main.infoControlsManual') }}</p>
+      <p>{{ t('main.infoControlsVoice') }}</p>
+      <p>{{ t('main.infoControlsLexicon') }}</p>
+
+      <h3 class="info-section-title">{{ t('main.infoSecDifficulty') }}</h3>
+      <ul class="info-list">
+        <li>{{ t('main.infoDiffCadet') }}</li>
+        <li>{{ t('main.infoDiffOfficer') }}</li>
+        <li>{{ t('main.infoDiffCaptain') }}</li>
+      </ul>
+
+      <h3 class="info-section-title">{{ t('main.infoSecFuel') }}</h3>
+      <p>{{ t('main.infoFuelHud') }}</p>
+      <p>{{ t('main.infoFuelBurn') }}</p>
+
+      <h3 class="info-section-title">{{ t('main.infoSecPlanets') }}</h3>
+      <p>{{ t('main.infoPlanetsLanding') }}</p>
+      <p>{{ t('main.infoPlanetsScan') }}</p>
+      <p>{{ t('main.infoPlanetsMine') }}</p>
+
+      <h3 class="info-section-title">{{ t('main.infoSecHazards') }}</h3>
+      <p>{{ t('main.infoHazards') }}</p>
+
+      <h3 class="info-section-title">{{ t('main.infoSecWorld') }}</h3>
+      <p>{{ t('main.infoWorld') }}</p>
     </InfoDialog>
 
     <LexiconNotesDialog

@@ -55,7 +55,7 @@ function close(): void {
 
 .info-modal {
   width: min(32rem, 100%);
-  max-height: min(80vh, 520px);
+  max-height: min(88vh, 640px);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -117,6 +117,38 @@ function close(): void {
 }
 
 .info-body :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.info-body :deep(.info-lead) {
+  font-size: 0.92rem;
+  color: var(--text-h);
+}
+
+.info-body :deep(.info-section-title) {
+  margin: 1rem 0 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-dim);
+}
+
+.info-body :deep(.info-section-title:first-of-type) {
+  margin-top: 0.65rem;
+}
+
+.info-body :deep(.info-list) {
+  margin: 0 0 0.75rem;
+  padding-left: 1.15rem;
+  color: color-mix(in srgb, var(--text-h) 92%, var(--muted));
+}
+
+.info-body :deep(.info-list li) {
+  margin-bottom: 0.35rem;
+}
+
+.info-body :deep(.info-list li:last-child) {
   margin-bottom: 0;
 }
 </style>
